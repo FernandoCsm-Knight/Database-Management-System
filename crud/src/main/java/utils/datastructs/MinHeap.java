@@ -1,4 +1,4 @@
-package crud.datastructs;
+package utils.datastructs;
 
 public class MinHeap<T extends Comparable<T>> {
     private final T[] heap;
@@ -158,7 +158,4 @@ public class MinHeap<T extends Comparable<T>> {
         heap[indexOne] = heap[indexTwo];
         heap[indexTwo] = temp;
     }
-
-
-
 }

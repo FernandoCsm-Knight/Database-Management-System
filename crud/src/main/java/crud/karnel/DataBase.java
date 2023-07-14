@@ -71,47 +71,6 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
         }
     }
 
-    public int getLastId() throws IOException {
-        this.file = new RandomAccessFile(new File(this.filePath), "rw");
-        this.file.seek(0);
-        int id = this.file.readInt();
-    
-        this.file.close();
-        return id;
-    }
-
-    public int getNextId(long pos) throws IOException {
-        if(pos < 0)
-            throw new IndexOutOfBoundsException();
-
-        this.file = new RandomAccessFile(new File(this.filePath), "rw");
-        if(pos == 0)
-            pos = Integer.BYTES;
-
-        int len = 0;
-
-        this.file.seek(pos);
-        if(this.file.getFilePointer() < this.file.length()) {
-            boolean lapide = this.file.readBoolean();
-            while(!lapide && this.file.getFilePointer() < this.file.length()) {
-                len = this.file.readInt();
-                this.file.skipBytes(len);
-    
-                if(this.file.getFilePointer() < this.file.length()) 
-                    lapide = this.file.readBoolean();
-            }
-        }
-
-        int id  = -1;
-        if(this.file.getFilePointer() < this.file.length()) {
-            this.file.skipBytes(Integer.BYTES);
-            id = this.file.readInt();
-        }
-        
-        this.file.close();
-        return id;
-    }
-
     private int __checkDefaultId() throws IOException {
         this.file.seek(0);
         int id = this.file.readInt();
@@ -119,6 +78,15 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
         if(id == 0)
             throw new EmptyFileException("The file at " + this.filePath + " has no objects.");
 
+        return id;
+    }
+
+    public int getLastId() throws IOException {
+        this.file = new RandomAccessFile(new File(this.filePath), "rw");
+        this.file.seek(0);
+        int id = this.file.readInt();
+    
+        this.file.close();
         return id;
     }
 
@@ -136,7 +104,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
             pos = this.file.getFilePointer();
             lapide = this.file.readBoolean();
             obj = this._readObj();
-        } while((!lapide || obj.compare(key, value) != 0) && this.file.getFilePointer() < this.file.length());
+        } while((!lapide || obj.compare(key, value) != 0) && !this._isEOF());
 
         if(obj == null || obj.compare(key, value) != 0 || !lapide) 
             pos = -1;

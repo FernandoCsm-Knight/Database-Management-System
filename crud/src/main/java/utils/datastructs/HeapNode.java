@@ -1,10 +1,10 @@
-package crud.datastructs;
+package utils.datastructs;
 
 import java.util.Comparator;
 
 import components.interfaces.Register;
 
-public class SubstitutionHeapNode<T extends Register<T>> implements Comparable<SubstitutionHeapNode<T>> {
+public class HeapNode<T extends Register<T>> implements Comparable<HeapNode<T>> {
 
     // Atributes
 
@@ -14,7 +14,7 @@ public class SubstitutionHeapNode<T extends Register<T>> implements Comparable<S
 
     // Constructor
 
-    public SubstitutionHeapNode(T item, int weight, Comparator<T> comparator) {
+    public HeapNode(T item, int weight, Comparator<T> comparator) {
         this.item = item;
         this.weight = weight;
         this.comparator = comparator;
@@ -22,16 +22,16 @@ public class SubstitutionHeapNode<T extends Register<T>> implements Comparable<S
 
 
     /**
-     * Compares two SubstitutionHeapNodes.
-     * @param tSubstitutionHeapNode the other SubstitutionHeapNode
+     * Compares two HeapNodes.
+     * @param tHeapNode the other HeapNode
      * @return the difference between the weights of the two nodes if they are not equal. Otherwise, the difference between the items of the two nodes.
      */
 
     @Override
-    public int compareTo(SubstitutionHeapNode<T> tSubstitutionHeapNode) {
-        if (tSubstitutionHeapNode.weight != this.weight)
-            return this.weight - tSubstitutionHeapNode.weight;
-        return comparator.compare(this.item, tSubstitutionHeapNode.item);
+    public int compareTo(HeapNode<T> tHeapNode) {
+        if (tHeapNode.weight != this.weight)
+            return this.weight - tHeapNode.weight;
+        return comparator.compare(this.item, tHeapNode.item);
     }
 
     // Getters and Setters

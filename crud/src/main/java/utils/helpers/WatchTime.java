@@ -1,4 +1,4 @@
-package utils;
+package utils.helpers;
 
 /**
  * The class {@code WatchTime} represents a stopwatch.

@@ -11,11 +11,11 @@ import com.opencsv.exceptions.CsvValidationException;
 import components.interfaces.Register;
 import crud.base.StructureValidation;
 import crud.karnel.DataBase;
-import crud.karnel.SortedFileHeap;
+import crud.sorts.SortedFileHeap;
 import logic.SystemSpecification;
 import utils.csv.CSVManager;
 
-public class CRUD<T extends Register<T>> extends SystemSpecification {
+public class CRUD<T extends Register<T>> implements SystemSpecification {
     
     private static int FILE_COUNT = 0;
     private final String filePath;
