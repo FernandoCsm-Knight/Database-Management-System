@@ -1,24 +1,29 @@
-package crud.indexes.Trees;
+package crud.indexes.trees;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Constructor;
 
 import crud.base.StructureValidation;
+import crud.indexes.types.interfaces.INode;
 import logic.SystemSpecification;
 
-public class BPlusTree implements SystemSpecification {
+public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
     // Attributes
+
     private static final int MIN_ORDER = 3;
     
     private int order;
     private String path;
     private long root = -1;
     private RandomAccessFile file;
+    private Constructor<T> constructor;
 
     // Delete auxiliar variables
+
     private long addressToRewrite = -1;
     private int indexToRewrite = -1;
 
@@ -26,16 +31,17 @@ public class BPlusTree implements SystemSpecification {
 
     // Constructors
 
-    public BPlusTree(int order, String path) {
+    public BPlusTree(int order, String path, Constructor<T> constructor) {
         if(!path.endsWith(".db"))
             throw new IllegalArgumentException("The B+ Tree name must ends with .db");
 
         if(order < MIN_ORDER) 
             throw new IllegalArgumentException("Order must be greater than " + MIN_ORDER);
-        
+
         this.order = order;
+        this.constructor = constructor;
         this.path = INDEXES_FILES_DIRECTORY + path;
-        this.PAGE_BYTES = new Page(order).BYTES;
+        this.PAGE_BYTES = new Page<T>(order, constructor).BYTES;
     }
 
     // Initialize Methods
@@ -46,7 +52,7 @@ public class BPlusTree implements SystemSpecification {
 
         try {
             this.updateRoot(Long.BYTES);
-            this.writePage(new Page(this.order), Long.BYTES);
+            this.writePage(new Page<T>(this.order, constructor), Long.BYTES);
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -77,19 +83,27 @@ public class BPlusTree implements SystemSpecification {
         return len;
     }
 
-    public Node search(int key) throws IOException {
+    public T search(Object key) throws IOException {
         return this.search(key, this.readPage(this.root));
     }
 
-    public boolean update(int key, long value) throws IOException {
-        return this.update(new Node(key, value), this.readPage(this.root));
+    public boolean update(Object key, Object value) throws Exception {
+        T node = constructor.newInstance();
+        node.setKey(key);
+        node.setValue(value);
+
+        return this.update(node, this.readPage(this.root));
     }
 
-    public void insert(int key, long value) throws IOException {
-        Page newPage = this.insert(new Node(key, value), this.readPage(this.root));
+    public void insert(Object key, Object value) throws Exception {
+        T node = constructor.newInstance();
+        node.setKey(key);
+        node.setValue(value);
+
+        Page<T> newPage = this.insert(node, this.readPage(this.root));
 
         if(newPage != null) {
-            Page newRoot = new Page(this.order);
+            Page<T> newRoot = new Page<T>(this.order, this.constructor);
             newRoot.children[0] = this.root;
             newRoot.keys[0] = newPage.keys[0].clone();
             newRoot.children[1] = newPage.address;
@@ -110,8 +124,8 @@ public class BPlusTree implements SystemSpecification {
         }
     }
 
-    public boolean delete(int key) throws IOException {
-        Page newRoot = this.delete(key, this.readPage(this.root));
+    public boolean delete(Object key) throws IOException {
+        Page<T> newRoot = this.delete(key, this.readPage(this.root));
 
         if(newRoot != null) {
             if(newRoot.isUnderflow() && newRoot.children[0] != -1 && newRoot.keyCount == 0) {
@@ -124,7 +138,7 @@ public class BPlusTree implements SystemSpecification {
 
         if(this.addressToRewrite != -1) {
             int i = this.indexToRewrite;
-            Page pageToRewrite = this.readPage(this.addressToRewrite);
+            Page<T> pageToRewrite = this.readPage(this.addressToRewrite);
 
             pageToRewrite.keys[i] = minKey(this.readPage(pageToRewrite.children[i + 1]));
             this.writePage(pageToRewrite, pageToRewrite.address);
@@ -151,16 +165,16 @@ public class BPlusTree implements SystemSpecification {
 
     //Private Methods
 
-    private Node search(int key, Page curr) throws IOException {
+    private T search(Object key, Page<T> curr) throws IOException {
         if(curr.children[0] == -1) {
             for(int i = 0; i < curr.keyCount; i++) 
-                if(curr.keys[i].key == key)
+                if(curr.keys[i].compareTo(key) == 0)
                     return curr.keys[i];
 
             return null;
         } else {
             int i = 0;
-            while(i < curr.keyCount && curr.keys[i].key <= key) {
+            while(i < curr.keyCount && curr.keys[i].compareTo(key) <= 0) {
                 i++;
             }
 
@@ -168,11 +182,11 @@ public class BPlusTree implements SystemSpecification {
         }
     }
 
-    public boolean update(Node node, Page curr) throws IOException {
+    public boolean update(T key, Page<T> curr) throws IOException {
         if(curr.children[0] == -1) {
             for(int i = 0; i < curr.keyCount; i++) {
-                if(curr.keys[i].key == node.key) {
-                    curr.keys[i] = node;
+                if(curr.keys[i].compareTo(key) == 0) {
+                    curr.keys[i] = key;
                     this.writePage(curr, curr.address);
                     return true;
                 }
@@ -181,19 +195,19 @@ public class BPlusTree implements SystemSpecification {
             return false;
         } else {
             int i = 0;
-            while(i < curr.keyCount && curr.keys[i].key <= node.key) {
+            while(i < curr.keyCount && curr.keys[i].compareTo(key) <= 0) {
                 i++;
             }
             
-            return this.update(node, this.readPage(curr.children[i]));
+            return this.update(key, this.readPage(curr.children[i]));
         }
     }
 
-    private Page deleteChild(int key, Page curr) {
-        Page res = null;
+    private Page<T> deleteChild(Object key, Page<T> curr) {
+        Page<T> res = null;
         int idx = -1;
         for(int i = 0; i < curr.keyCount && idx == -1; i++) 
-            if(curr.keys[i].key == key) idx = i;
+            if(curr.keys[i].compareTo(key) == 0) idx = i;
             
         if(idx != -1) {
             for(int i = idx; i < curr.keyCount; i++) 
@@ -206,18 +220,18 @@ public class BPlusTree implements SystemSpecification {
         return res;
     }
 
-    private Page delete(int key, Page curr) throws IOException {
-        Page child = null;
+    private Page<T> delete(Object key, Page<T> curr) throws IOException {
+        Page<T> child = null;
 
         if(curr.children[0] == -1) {
             child = this.deleteChild(key, curr);
         } else {
             int idx = 0;
-            while(idx < curr.keyCount && curr.keys[idx].key < key) {
+            while(idx < curr.keyCount && curr.keys[idx].compareTo(key) < 0) {
                 idx++;
             }
 
-            if(curr.keys[idx].key == key) {
+            if(curr.keys[idx].compareTo(key) == 0) {
                 this.addressToRewrite = curr.address;
                 this.indexToRewrite = idx;
                 idx++;
@@ -226,8 +240,8 @@ public class BPlusTree implements SystemSpecification {
             child = this.delete(key, this.readPage(curr.children[idx]));
 
             if(child.isUnderflow()) {
-                Page left = (idx > 0) ? this.readPage(curr.children[idx - 1]) : null;
-                Page right = (idx < curr.keyCount) ? this.readPage(curr.children[idx + 1]) : null;
+                Page<T> left = (idx > 0) ? this.readPage(curr.children[idx - 1]) : null;
+                Page<T> right = (idx < curr.keyCount) ? this.readPage(curr.children[idx + 1]) : null;
 
                 if(left != null && left.canBorrow()) {
                     for(int j = child.keyCount; j > 0; j--) {
@@ -241,7 +255,13 @@ public class BPlusTree implements SystemSpecification {
                         child.keys[0] = left.keys[left.keyCount - 1].clone();
                         child.keyCount++;
     
-                        left.keys[left.keyCount - 1] = new Node();
+                        try {
+                            left.keys[left.keyCount - 1] = constructor.newInstance();
+                        } catch(Exception e) {
+                            System.out.println("Can not make a new instance of " + constructor.getClass().getName() + ".");
+                            e.printStackTrace();
+                        }
+
                         left.keyCount--;
     
                         curr.keys[idx - 1] = child.keys[0];
@@ -251,9 +271,16 @@ public class BPlusTree implements SystemSpecification {
                         child.keyCount++;
     
                         curr.keys[idx - 1] = left.keys[left.keyCount - 1].clone();
-                        left.keys[left.keyCount - 1] = new Node();
+
+                        try {
+                            left.keys[left.keyCount - 1] = constructor.newInstance();
+                        } catch(Exception e) {
+                            System.out.println("Can not make a new instance of " + constructor.getClass().getName() + ".");
+                            e.printStackTrace();
+                        }
+
                         left.children[left.keyCount] = -1;
-                        left.keyCount--;    
+                        left.keyCount--;
                     }
                     
                     this.writePage(child, child.address);
@@ -364,15 +391,15 @@ public class BPlusTree implements SystemSpecification {
         return child;
     }
 
-    private Page insert(Node key, Page curr) throws IOException {
+    private Page<T> insert(T key, Page<T> curr) throws IOException {
         int idx = 0;
-        Page newPage = null;
+        Page<T> newPage = null;
         if(curr.children[0] == -1) {
-            while(idx < curr.keyCount && curr.keys[idx].key < key.key) {
+            while(idx < curr.keyCount && curr.keys[idx].compareTo(key) < 0) {
                 idx++;
             }
     
-            if(curr.keys[idx].key == key.key)
+            if(curr.keys[idx].compareTo(key) == 0)
                 return null;
 
             for(int i = curr.keyCount - 1; i >= idx; i--) 
@@ -380,7 +407,7 @@ public class BPlusTree implements SystemSpecification {
 
             curr.keys[idx] = key;
             curr.keyCount++;
-    
+
             if(curr.keyCount > order - 1) {
                 newPage = split(curr);
             }
@@ -388,11 +415,11 @@ public class BPlusTree implements SystemSpecification {
             if(newPage != null) this.writePage(newPage, newPage.address);
             else this.writePage(curr, curr.address);
         } else {
-            while(idx < curr.keyCount && curr.keys[idx].key <= key.key) {
+            while(idx < curr.keyCount && curr.keys[idx].compareTo(key) <= 0) {
                 idx++;
             }
 
-            Page child = this.readPage(curr.children[idx]);
+            Page<T> child = this.readPage(curr.children[idx]);
             newPage = this.insert(key, child);
 
             if(newPage != null) {
@@ -424,10 +451,10 @@ public class BPlusTree implements SystemSpecification {
         return newPage;
     }
 
-    private Page split(Page curr) throws IOException {
+    private Page<T> split(Page<T> curr) throws IOException {
         int mid = curr.keyCount / 2;
 
-        Page page = new Page(order);
+        Page<T> page = new Page<T>(order, this.constructor);
         page.address = this.length();
 
         if(curr.children[0] == -1) {
@@ -438,7 +465,14 @@ public class BPlusTree implements SystemSpecification {
         for (int i = mid; i < curr.keyCount; i++) {
             page.keys[i - mid] = curr.keys[i];
             page.children[i - mid] = curr.children[i + 1];
-            curr.keys[i] = new Node();
+
+            try {
+                curr.keys[i] = constructor.newInstance();
+            } catch(Exception e) {
+                System.out.println("Can not make a new instance of " + constructor.getClass().getName() + ".");
+                e.printStackTrace();
+            }
+
             curr.children[i + 1]  = -1;
         }
 
@@ -449,8 +483,15 @@ public class BPlusTree implements SystemSpecification {
         return page;
     }
 
-    private Node minKey(Page curr) throws IOException {
-        if(curr == null) return new Node();
+    private T minKey(Page<T> curr) throws IOException {
+        if(curr == null) {
+            try {
+                return constructor.newInstance();
+            } catch(Exception e) {
+                System.out.println("Can not make a new instance of " + constructor.getClass().getName() + ".");
+                e.printStackTrace();
+            }
+        }
 
         if(curr.children[0] == -1) {
             return curr.keys[0];
@@ -459,7 +500,7 @@ public class BPlusTree implements SystemSpecification {
         return this.minKey(this.readPage(curr.children[0]));
     }
 
-    private void toJsonFile(StringBuffer sb, Page curr) throws IOException {
+    private void toJsonFile(StringBuffer sb, Page<T> curr) throws IOException {
         if(curr != null) {
             toJsonFile(sb, this.readPage(curr.children[0]));
             sb.append(curr.toString() + ",\n");
@@ -471,7 +512,7 @@ public class BPlusTree implements SystemSpecification {
 
     // Read and Write
 
-    private Page readPage(long address) throws IOException {
+    private Page<T> readPage(long address) throws IOException {
         if(address == -1) return null;
 
         this.file = new RandomAccessFile(this.path, "r");
@@ -479,14 +520,14 @@ public class BPlusTree implements SystemSpecification {
 
         byte[] buffer = new byte[this.PAGE_BYTES];
         this.file.read(buffer);
-        Page page = new Page(buffer);
+        Page<T> page = new Page<T>(buffer, this.constructor);
         page.address = address;
 
         this.file.close();
         return page;
     }
 
-    private void writePage(Page page, long address) throws IOException {
+    private void writePage(Page<T> page, long address) throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
         this.file.seek(address);
 

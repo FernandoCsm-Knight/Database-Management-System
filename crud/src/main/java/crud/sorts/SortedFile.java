@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Constructor;
 import java.util.Comparator;
+import java.util.UUID;
 
 import components.interfaces.Register;
 import crud.base.BinaryArchive;
@@ -145,10 +146,10 @@ public abstract class SortedFile<T extends Register<T>> extends BinaryArchive<T>
         this.tmpFiles = new BinaryArchive[NUMBER_OF_BRANCHES];
 
         for(int i = 0; i < this.originalFiles.length; i++) {
-            this.originalFiles[i] = new BinaryArchive<T>(TEMPORARY_FILES_PATH + (i + 1) + ".dat", this.constructor);
+            this.originalFiles[i] = new BinaryArchive<T>(TEMPORARY_FILES_DIRECTORY + UUID.randomUUID().toString() + (i + 1) + ".dat", this.constructor);
             this.originalFiles[i].file = new RandomAccessFile(this.originalFiles[i].filePath, "rw");
             
-            this.tmpFiles[i] = new BinaryArchive<T>(TEMPORARY_FILES_PATH + (i + 1 + NUMBER_OF_BRANCHES) + ".dat", this.constructor);
+            this.tmpFiles[i] = new BinaryArchive<T>(TEMPORARY_FILES_DIRECTORY + UUID.randomUUID().toString() + (i + 1 + NUMBER_OF_BRANCHES) + ".dat", this.constructor);
             this.tmpFiles[i].file = new RandomAccessFile(this.tmpFiles[i].filePath, "rw");
         }
     }

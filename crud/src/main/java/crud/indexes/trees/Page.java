@@ -1,19 +1,23 @@
-package crud.indexes.Trees;
+package crud.indexes.trees;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
-public class Page {
+import crud.indexes.types.interfaces.INode;
+
+public class Page<T extends INode<T>> {
     
     // Attributes
 
     private int order;
+    private Constructor<T> constructor;
 
-    public Node[] keys;
+    public T[] keys;
     public long[] children;
 
     public int keyCount = 0;
@@ -23,14 +27,21 @@ public class Page {
     public final int BYTES;
 
     // Constructors
-    public Page(int order) {
+    @SuppressWarnings("unchecked")
+    public Page(int order, Constructor<T> constructor) {
         this.order = order;
-        this.keys = new Node[order];
+        this.constructor = constructor;
+        this.keys = (T[])new INode[order];
         this.children = new long[order + 1];
         this.next = -1;
 
         for(int i = 0; i < this.order; i++) {
-            this.keys[i] = new Node();
+            try {
+                this.keys[i] = constructor.newInstance();
+            } catch(Exception e) {
+                System.out.println("Can not make a new instance of " + constructor.getName() + ".");
+                e.printStackTrace();
+            }
             this.children[i] = -1;
         }
 
@@ -38,16 +49,17 @@ public class Page {
 
         this.BYTES = Integer.BYTES + // order
                      Integer.BYTES + // keyCount
-                     order * Node.BYTES + // keys
+                     order * this.keys[0].getBytes() + // keys
                      (order + 1) * Long.BYTES + // children
                      Long.BYTES; // next
     }
 
-    public Page(byte[] buffer) throws IOException {
+    public Page(byte[] buffer, Constructor<T> constructor) throws IOException {
+        this.constructor = constructor;
         this.fromByteArray(buffer);
         this.BYTES = Integer.BYTES + // order
                      Integer.BYTES + // keyCount
-                     order * Node.BYTES + // keys
+                     order * this.keys[0].getBytes() + // keys
                      (order + 1) * Long.BYTES + // children
                      Long.BYTES; // next
     }
@@ -85,6 +97,7 @@ public class Page {
         return buffer;
     }
 
+    @SuppressWarnings("unchecked")
     public void fromByteArray(byte[] buffer) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
         DataInputStream dis = new DataInputStream(bais);
@@ -92,16 +105,23 @@ public class Page {
         this.order = dis.readInt();
         this.keyCount = dis.readInt();
 
-        this.keys = new Node[this.order];
+        this.keys = (T[])new INode[order];
         this.children = new long[this.order + 1];
 
         for(int i = 0; i < this.order; i++) {
             this.children[i] = dis.readLong();
 
-            byte[] nodeBuffer = new byte[Node.BYTES];
+            try {
+                this.keys[i] = constructor.newInstance();
+            } catch(Exception e) {
+                System.out.println("Can not make a new instance of " + constructor.getName() + ".");
+                e.printStackTrace();
+            }
+
+            byte[] nodeBuffer = new byte[this.keys[i].getBytes()];
             dis.read(nodeBuffer);
 
-            this.keys[i] = new Node(nodeBuffer);
+            this.keys[i].fromByteArray(nodeBuffer);
         }
 
         this.children[this.order] = dis.readLong();

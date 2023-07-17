@@ -12,6 +12,7 @@ import java.io.RandomAccessFile;
 
 import crud.base.StructureValidation;
 import logic.SystemSpecification;
+import utils.helpers.WatchTime;
 
 /*********
  * ARVORE B+ SI
@@ -966,7 +967,6 @@ public class BPlusTreeK implements SystemSpecification {
         arquivo = new RandomAccessFile(nomeArquivo,"rw");
         arquivo.writeLong(-1);  // raiz empty
     }
-    
 }
     
         

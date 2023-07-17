@@ -14,8 +14,6 @@ public interface SystemSpecification {
     static final String INDEXES_FILES_DIRECTORY = PROJECT_PATH + "data/index/"; // Directory where the indexes will be stored
     
     static final String DATABASE_FILE_PATH = PROJECT_PATH + "data/database.db"; // Path of the database file
-    static final String TEMPORARY_FILES_PATH =  TEMPORARY_FILES_DIRECTORY + "tmp"; // Path of the temporary files
-    static final String INDEXES_FILE_PATH = INDEXES_FILES_DIRECTORY + "index"; // Path of the indexes file
     
-    static final String TEMPORARY_FILES_EXTENSION = ".tmp"; // Extension of the temporary files
+    static final String TEMPORARY_FILES_EXTENSION = ".dat"; // Extension of the temporary files
 }
