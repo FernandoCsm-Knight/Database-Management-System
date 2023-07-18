@@ -24,6 +24,7 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
     private Directory directory;
     private RandomAccessFile file;
     private Constructor<T> constructor;
+    private boolean isRedundant = false;
     
     private final int bucketLength;
     public final int BUCKET_BYTES;
@@ -47,12 +48,21 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
         this.constructor = constructor;
         this.path = INDEXES_FILES_DIRECTORY + path;
         this.directory = new Directory(directoryPath);
-        this.bucketLength = Logic.database.blockFactor(10);
+        this.bucketLength = Logic.database.blockFactor(1000);
         this.BUCKET_BYTES = new Bucket<T>(bucketLength, (byte)0, constructor).BYTES;
         this.init();
     }
 
+    public ExtensibleHash(String path, Constructor<T> constructor, boolean isRedundant) throws Exception {
+        this(path, constructor);
+        this.isRedundant = isRedundant;
+    }
+
     // Public Methods
+
+    public String getPath() {
+        return this.path;
+    }
 
     public void reset() throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
@@ -63,15 +73,15 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
         this.init();
     }
 
-    public void insert(Object key, Object value) throws Exception {
+    public boolean insert(Object key, Object value) throws Exception {
         long address = this.directory.getAddress(key);
         Bucket<T> bucket = this.readBucket(address);
+        boolean contains = bucket.contains(key);
 
-        if(bucket.contains(key))
-            throw new IllegalArgumentException("Key " + key.toString() + " already exists.");
+        if(!this.isRedundant && contains) return false;
 
         if(bucket.isFull()) {
-            T[] keys = bucket.keys;
+            T[] keys = bucket.getKeys();
             byte localDepth = (byte)(bucket.getLocalDepth() + 1);
 
             if(bucket.getLocalDepth() == this.directory.getGlobalDepth()) 
@@ -99,9 +109,14 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
             bucket.add(key, value);
             this.writeBucket(bucket, address);
         }
+
+        return true;
     }
 
     public boolean delete(Object key) throws Exception {
+        if(this.isRedundant) 
+            throw new IllegalAccessError("This index is redundant, if you want to delete a key use delete(Object key, Object value).");
+        
         long address = this.directory.getAddress(key);
         Bucket<T> bucket = this.readBucket(address);
         boolean res = bucket.delete(key);
@@ -110,7 +125,18 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
 
     }
 
+    public boolean delete(Object key, Object value) throws Exception {
+        long address = this.directory.getAddress(key);
+        Bucket<T> bucket = this.readBucket(address);
+        boolean res = bucket.delete(key, value);
+        this.writeBucket(bucket, address);
+        return res;
+    }
+
     public boolean update(Object key, Object value) throws Exception {
+        if(this.isRedundant) 
+            throw new IllegalAccessError("This index is redundant, if you want to update a key use update(Object key, Object oldValue, Object newValue).");
+        
         long address = this.directory.getAddress(key);
         Bucket<T> bucket = this.readBucket(address);
         boolean res = bucket.update(key, value);
@@ -118,10 +144,24 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
         return res;
     }
 
-    public T search(Object key) throws Exception {
+    public boolean update(Object key, Object oldValue, Object newValue) throws Exception {
+        long address = this.directory.getAddress(key);
+        Bucket<T> bucket = this.readBucket(address);
+        boolean res = bucket.update(key, oldValue, newValue);
+        this.writeBucket(bucket, address);
+        return res;
+    }
+
+    public T search(Object key) throws IOException {
         long address = this.directory.getAddress(key);
         Bucket<T> bucket = this.readBucket(address);
         return bucket.search(key);
+    }
+
+    public T[] readAll(Object key) throws IOException {
+        long address = this.directory.getAddress(key);
+        Bucket<T> bucket = this.readBucket(address);
+        return bucket.getKeys();
     }
 
     public void toJsonFile() throws IOException {

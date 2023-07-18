@@ -17,7 +17,7 @@ public class Bucket<T extends INode<T>> {
     private byte localDepth;
     private int length = 0;
     private int size = 0;
-    public T[] keys;
+    private T[] keys;
 
     public final int BYTES;
 
@@ -57,7 +57,11 @@ public class Bucket<T extends INode<T>> {
 
     // Methods
 
-    public void add(Object key, Object value) throws Exception {
+    public T[] getKeys() {
+        return this.keys.clone();
+    }
+
+    public boolean add(Object key, Object value) throws Exception {
         if(this.isFull())
             throw new IndexOutOfBoundsException("Cannot insert elemenet because bucket is full.");
 
@@ -71,11 +75,12 @@ public class Bucket<T extends INode<T>> {
         
         this.keys[i + 1] = node;
         this.size++;
+        return true;
     }
 
     public boolean update(Object key, Object value) throws Exception {
         if(this.isEmpty())
-            throw new IndexOutOfBoundsException("Cannot update element because bucket is empty.");
+            return false;
 
         T node = this.constructor.newInstance();
         node.setKey(key);
@@ -90,13 +95,56 @@ public class Bucket<T extends INode<T>> {
         return found;
     }
 
+    public boolean update(Object key, Object oldValue, Object newValue) throws Exception {
+        if(this.isEmpty())
+            return false;
+
+        T node = this.constructor.newInstance();
+        node.setKey(key);
+        node.setValue(oldValue);
+
+        boolean found = false;
+        for(int i = 0; i < this.size && !found; i++) {
+            found = this.keys[i].equals(node);
+            if(found) {
+                node.setValue(newValue);
+                this.keys[i] = node;
+            }
+        }
+
+        return found;
+    }
+
     public boolean delete(Object key) throws Exception {
         if(this.isEmpty())
-            throw new IndexOutOfBoundsException("Cannot remove element because bucket is empty.");
+            return false;
 
         boolean found = false;
         for(int i = 0; i < this.size && !found; i++) {
             found = this.keys[i].compareTo(key) == 0;
+            if(found) {
+                for(int j = i; j < this.size - 1; j++) 
+                    this.keys[j] = this.keys[j + 1];
+                
+                this.keys[this.size - 1] = this.constructor.newInstance();
+                this.size--;
+            }
+        }
+
+        return found;
+    }
+
+    public boolean delete(Object key, Object value) throws Exception {
+        if(this.isEmpty())
+            return false;
+
+        T node = this.constructor.newInstance();
+        node.setKey(key);
+        node.setValue(value);
+
+        boolean found = false;
+        for(int i = 0; i < this.size && !found; i++) {
+            found = this.keys[i].equals(node);
             if(found) {
                 for(int j = i; j < this.size - 1; j++) 
                     this.keys[j] = this.keys[j + 1];

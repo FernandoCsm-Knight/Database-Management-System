@@ -1,23 +1,25 @@
-import components.Show;
-import crud.CRUD;
-import crud.indexes.hash.ExtensibleHash;
-import crud.indexes.types.HNode;
-import crud.sorts.SortedFileHeap;
+import java.util.Arrays;
+
+import crud.indexes.query.InvertedIndex;
 import logic.SystemSpecification;
-import utils.helpers.WatchTime;
 
 public class Main implements SystemSpecification {
     
     public static void main(String[] args) throws Exception {
-        CRUD<Show> crud = new CRUD<Show>("src/main/java/data/database.db", Show.class.getConstructor());
-        crud.populateAll("src/main/java/data/bases/netflix_titles.csv");
+        InvertedIndex index = new InvertedIndex("inverted.db");
+        index.reset();
 
-        SortedFileHeap<Show> sortedFile = new SortedFileHeap<Show>("src/main/java/data/database.db", 500, Show.class.getConstructor()); 
+        index.insert("Fernando Campos Silva Dal Maria", 1L);
+        index.insert("Fernando Soares Augusto Nobrega", 10L);
+        index.insert("Augusto Pericles Campos", 100L);
+        index.insert("Henrique Silva Augusto", 1000L);
+        index.insert("Fernando Campos David", 10000L);
 
-        sortedFile.setComparator(Show.properties.get("dateAdded"));
-        sortedFile.sort();
+        index.delete("Fernando Campos David", 10000L);
 
-        crud.toJsonFile(1);
+        System.out.println(Arrays.toString(index.search("Campos")));
+        System.out.println(Arrays.toString(index.search("Fernando")));
+        System.out.println(Arrays.toString(index.search("David")));
     }
 
 }

@@ -11,6 +11,7 @@ public interface INode<T> {
 
     public void fromByteArray(byte[] buffer) throws IOException;
     public byte[] toByteArray() throws IOException;
+    public boolean equals(Object other);
     public int compareTo(Object other);
     public T clone();
 }

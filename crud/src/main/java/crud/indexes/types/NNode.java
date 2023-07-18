@@ -8,7 +8,7 @@ import java.io.IOException;
 
 import crud.indexes.types.interfaces.INode;
 
-public class BNode implements INode<BNode> {
+public class NNode implements INode<NNode> {
     
     // Attributes
 
@@ -17,16 +17,16 @@ public class BNode implements INode<BNode> {
     private int key;
     private long value;
 
-    public BNode() {
+    public NNode() {
         this(-1, -1);
     }
 
-    public BNode(int key, long value) {
+    public NNode(int key, long value) {
         this.key = key;
         this.value = value;
     }
 
-    public BNode(byte[] buffer) throws IOException {
+    public NNode(byte[] buffer) throws IOException {
         this.fromByteArray(buffer);
     }
 
@@ -89,13 +89,18 @@ public class BNode implements INode<BNode> {
     }
 
     @Override
-    public int compareTo(Object other) {
-        return other instanceof Integer ? this.key - key : this.key - ((BNode)other).key;
+    public boolean equals(Object other) {
+        return this.key == ((NNode)other).key && this.value == ((NNode)other).value;
     }
 
     @Override
-    public BNode clone() {
-        return new BNode(this.key, this.value);
+    public int compareTo(Object other) {
+        return other instanceof Integer ? this.key - key : this.key - ((NNode)other).key;
+    }
+
+    @Override
+    public NNode clone() {
+        return new NNode(this.key, this.value);
     }
 
     @Override
