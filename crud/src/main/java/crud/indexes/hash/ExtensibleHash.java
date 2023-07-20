@@ -76,9 +76,9 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
     public boolean insert(Object key, Object value) throws Exception {
         long address = this.directory.getAddress(key);
         Bucket<T> bucket = this.readBucket(address);
-        boolean contains = bucket.contains(key);
 
-        if(!this.isRedundant && contains) return false;
+        if((!this.isRedundant && bucket.contains(key)) || (this.isRedundant && bucket.contains(key, value))) 
+            return false;
 
         if(bucket.isFull()) {
             T[] keys = bucket.getKeys();

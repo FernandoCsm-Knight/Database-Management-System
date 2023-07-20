@@ -42,23 +42,21 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         this.constructor = constructor;
         this.path = INDEXES_FILES_DIRECTORY + path;
         this.PAGE_BYTES = new Page<T>(order, constructor).BYTES;
+
+        if(this.length() > 0) {
+            try {
+                this.file = new RandomAccessFile(this.path, "rw");
+                this.file.seek(0);
+                this.root = this.file.readLong();
+                this.file.close();
+            } catch(IOException e) {
+                System.out.println("It was not possible to open the tree, please try reset() method");
+                e.printStackTrace();
+            }
+        } else this.init();
     }
 
     // Initialize Methods
-
-    public boolean init() {
-        if(this.length() >= 8)
-            throw new IllegalAccessError("The archive \"" + this.path + "\" is not empty. If you want to initialize it anyway use the reset() method.");
-
-        try {
-            this.updateRoot(Long.BYTES);
-            this.writePage(new Page<T>(this.order, constructor), Long.BYTES);
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 
     public void reset() throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
@@ -164,6 +162,20 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
     }
 
     //Private Methods
+
+    private boolean init() {
+        if(this.length() >= 8)
+            throw new IllegalAccessError("The archive \"" + this.path + "\" is not empty. If you want to initialize it anyway use the reset() method.");
+
+        try {
+            this.updateRoot(Long.BYTES);
+            this.writePage(new Page<T>(this.order, constructor), Long.BYTES);
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     private T search(Object key, Page<T> curr) throws IOException {
         if(curr.children[0] == -1) {

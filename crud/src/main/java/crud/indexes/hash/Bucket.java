@@ -173,6 +173,18 @@ public class Bucket<T extends INode<T>> {
         return exists;
     }
 
+    public boolean contains(Object key, Object value) throws Exception {
+        T node = this.constructor.newInstance();
+        node.setKey(key);
+        node.setValue(value);
+
+        boolean exists = false;
+        for(int i = 0; i < keys.length && !exists; i++) 
+            exists = this.keys[i].equals(node);
+
+        return exists;
+    }
+
     public int getLocalDepth() {
         return this.localDepth;
     }
