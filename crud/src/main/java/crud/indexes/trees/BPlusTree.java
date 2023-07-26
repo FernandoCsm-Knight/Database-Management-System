@@ -10,27 +10,93 @@ import crud.base.StructureValidation;
 import crud.indexes.types.interfaces.INode;
 import logic.SystemSpecification;
 
+/**
+ * <strong> The {@code BPlusTree} class represents a B+ Tree. </strong>
+ * 
+ * <p>
+ * A B+ Tree is a tree data structure that keeps data sorted and allows searches,
+ * insertions, and deletions in logarithmic amortized time. It is a self-balancing
+ * tree, so the height of the tree is always logarithmic.
+ * </p>
+ * 
+ * <p>
+ * The B+ Tree is used to index the data in the database. The B+ Tree is a file
+ * that stores the nodes of the tree. The nodes are pages in the file. The pages
+ * are blocks of bytes in the disk, so they have a fixed size.
+ * </p>
+ * 
+ * <strong> Logic of the B+ Tree </strong>
+ * 
+ * <p>
+ * The B+ Tree have a root node. The root node is the first node in the file.
+ * The root node can be a leaf or an internal node. The root node is the only
+ * node that can have less than the minimum number of keys.
+ * </p>
+ * 
+ * <p>
+ * The internal nodes have keys and children. The keys are the values that are
+ * used to search the nodes. The children are the addresses of the nodes in the
+ * file. The internal nodes have one more child than keys.
+ * </p>
+ * 
+ * <p>
+ * The leaf nodes have keys and values. The keys are the values that are used to
+ * search the nodes. The values are the addresses of the registers in the file.
+ * The leaf nodes have the same number of keys and values.
+ * </p>
+ *
+ * <p>
+ * The B+ Tree have a dynamic order that is defined when the tree is created.
+ * The order is the maximum number of keys that a node can have. The order must
+ * be greater than 2.
+ * </p>
+ * 
+ * <p>
+ * The B+ Tree uses a minumum number of keys to avoid underflow. The minimum
+ * number of keys is the half of the order minus one. The minimum number of
+ * keys must be greater than 0. It can be calculated using the formula:
+ * </p>
+ * 
+ * <p>
+ * {@code ceil(order / 2.0)) - 1}
+ * </p>
+ * 
+ * 
+ * @author Fernando Campos Silva Dal Maria
+ * @see crud.indexes.types.interfaces.INode
+ * @see crud.indexes.trees.Page
+ * 
+ * @version 1.0.0
+ */
+
 public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
     // Attributes
 
-    private static final int MIN_ORDER = 3;
+    private static final int MIN_ORDER = 3; // Minimum order of the tree
     
-    private int order;
-    private String path;
-    private long root = -1;
-    private RandomAccessFile file;
-    private Constructor<T> constructor;
+    private int order; // Maximum number of children a node can have
+    private String path; // Path of the B+ Tree file
+    private long root = -1; // Address of the root node
+    private RandomAccessFile file; // File of the B+ Tree
+    private Constructor<T> constructor; // Constructor of the node type
 
     // Delete auxiliar variables
 
-    private long addressToRewrite = -1;
-    private int indexToRewrite = -1;
+    private long addressToRewrite = -1; // Address of the node that needs to be rewritten
+    private int indexToRewrite = -1; // Index of the key that needs to be rewritten
 
-    public final int PAGE_BYTES;
+    public final int PAGE_BYTES; // Size of a page in bytes
 
     // Constructors
 
+    /**
+     * Creates a new B+ Tree with the given order and path.
+     * 
+     * @param order The maximum number of children a node can have.
+     * @param path The path of the B+ Tree file.
+     * @param constructor The constructor of the node type.
+     */
     public BPlusTree(int order, String path, Constructor<T> constructor) {
         if(!path.endsWith(".db"))
             throw new IllegalArgumentException("The B+ Tree name must ends with .db");
@@ -58,6 +124,11 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
     // Initialize Methods
 
+    /**
+     * Rewrite and initialize the B+ Tree file.
+     * 
+     * @throws IOException
+     */
     public void reset() throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
         this.file.setLength(0);
@@ -68,6 +139,11 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
     // Public Methods
 
+    /**
+     * Returns the order of the B+ Tree.
+     * 
+     * @return The order of the B+ Tree.
+     */
     public long length() {
         long len = -1;
         try {
@@ -81,10 +157,25 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return len;
     }
 
+    /**
+     * Returns the node with the given tree.
+     * 
+     * @param key The key of the node.
+     * @return The node with the given key.
+     * @throws IOException 
+     */
     public T search(Object key) throws IOException {
         return this.search(key, this.readPage(this.root));
     }
 
+    /**
+     * Updates the node with the given key setting its value.
+     * 
+     * @param key The key of the node.
+     * @param value The new value of the node.
+     * @return True if the node was updated, false otherwise.
+     * @throws Exception
+     */
     public boolean update(Object key, Object value) throws Exception {
         T node = constructor.newInstance();
         node.setKey(key);
@@ -93,6 +184,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return this.update(node, this.readPage(this.root));
     }
 
+    /**
+     * Inserts a new node with the given key and value.
+     * 
+     * @param key The key of the node.
+     * @param value The value of the node.
+     * @throws Exception 
+     */
     public void insert(Object key, Object value) throws Exception {
         T node = constructor.newInstance();
         node.setKey(key);
@@ -122,6 +220,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         }
     }
 
+    /**
+     * Deletes the node with the given key.
+     * 
+     * @param key The key of the node.
+     * @return True if the node was deleted, false otherwise.
+     * @throws IOException
+     */
     public boolean delete(Object key) throws IOException {
         Page<T> newRoot = this.delete(key, this.readPage(this.root));
 
@@ -148,6 +253,11 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return newRoot != null;
     }
 
+    /**
+     * Converts the B+ tree to JSON format and stores it in the JSON index directory.
+     * 
+     * @throws IOException
+     */ 
     public void toJsonFile() throws IOException {
         StructureValidation.createJSONIndexDirectory();
 
@@ -163,6 +273,11 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
     //Private Methods
 
+    /**
+     * Initialize the B+ Tree file.
+     * 
+     * @return True if the B+ Tree was initialized, false otherwise.
+     */
     private boolean init() {
         if(this.length() >= 8)
             throw new IllegalAccessError("The archive \"" + this.path + "\" is not empty. If you want to initialize it anyway use the reset() method.");
@@ -177,6 +292,14 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         }
     }
 
+    /**
+     * Search the node with the given key in the B+ Tree.
+     * 
+     * @param key The key of the node.
+     * @param curr The current page.
+     * @return The node with the given key.
+     * @throws IOException
+     */
     private T search(Object key, Page<T> curr) throws IOException {
         if(curr.children[0] == -1) {
             for(int i = 0; i < curr.keyCount; i++) 
@@ -194,7 +317,15 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         }
     }
 
-    public boolean update(T key, Page<T> curr) throws IOException {
+    /**
+     * Search and update the node with the given key in the B+ Tree.
+     * 
+     * @param key The key of the node.
+     * @param curr The current page.
+     * @return True if the node was updated, false otherwise.
+     * @throws IOException
+     */
+    private boolean update(T key, Page<T> curr) throws IOException {
         if(curr.children[0] == -1) {
             for(int i = 0; i < curr.keyCount; i++) {
                 if(curr.keys[i].compareTo(key) == 0) {
@@ -215,6 +346,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         }
     }
 
+    /**
+     * Delete the node at a child page in the B+ Tree.
+     * 
+     * @param key The key of the node.
+     * @param curr The current page.
+     * @return The current page.
+     */
     private Page<T> deleteChild(Object key, Page<T> curr) {
         Page<T> res = null;
         int idx = -1;
@@ -232,6 +370,14 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return res;
     }
 
+    /**
+     * Delete the node with the given key in the B+ Tree.
+     * 
+     * @param key The key of the node.
+     * @param curr The current page.
+     * @return The current page.
+     * @throws IOException
+     */
     private Page<T> delete(Object key, Page<T> curr) throws IOException {
         Page<T> child = null;
 
@@ -403,6 +549,14 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return child;
     }
 
+    /**
+     * Insert the node with the given key in the B+ Tree.
+     * 
+     * @param key The key of the node.
+     * @param curr The current page.
+     * @return The new page if the current page was split, null otherwise.
+     * @throws IOException
+     */
     private Page<T> insert(T key, Page<T> curr) throws IOException {
         int idx = 0;
         Page<T> newPage = null;
@@ -463,6 +617,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return newPage;
     }
 
+    /**
+     * Split the current page in two.
+     * 
+     * @param curr The current page.
+     * @return The new page.
+     * @throws IOException
+     */
     private Page<T> split(Page<T> curr) throws IOException {
         int mid = curr.keyCount / 2;
 
@@ -495,6 +656,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return page;
     }
 
+    /**
+     * Returns the minimum key for the given page.
+     * 
+     * @param curr The current page.
+     * @return The minimum key for the given page.
+     * @throws IOException
+     */
     private T minKey(Page<T> curr) throws IOException {
         if(curr == null) {
             try {
@@ -512,6 +680,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return this.minKey(this.readPage(curr.children[0]));
     }
 
+    /**
+     * Converts the B+ Tree to JSON format.
+     * 
+     * @param sb The string buffer.
+     * @param curr The current page.
+     * @throws IOException
+     */
     private void toJsonFile(StringBuffer sb, Page<T> curr) throws IOException {
         if(curr != null) {
             toJsonFile(sb, this.readPage(curr.children[0]));
@@ -524,6 +699,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
     // Read and Write
 
+    /**
+     * Read a page from the B+ Tree file.
+     * 
+     * @param address The address of the page.
+     * @return The page.
+     * @throws IOException
+     */
     private Page<T> readPage(long address) throws IOException {
         if(address == -1) return null;
 
@@ -539,6 +721,13 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         return page;
     }
 
+    /**
+     * Write a page in the B+ Tree file.
+     * 
+     * @param page The page.
+     * @param address The address of the page.
+     * @throws IOException
+     */
     private void writePage(Page<T> page, long address) throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
         this.file.seek(address);
@@ -549,6 +738,12 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
         this.file.close();
     }
 
+    /**
+     * Update the root of the B+ Tree.
+     * 
+     * @param address The address of the root.
+     * @throws IOException
+     */
     private void updateRoot(long address) throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
         this.file.seek(0);

@@ -8,14 +8,20 @@ import java.io.IOException;
 
 import crud.indexes.types.interfaces.INode;
 
+/**
+ * <strong> A {@code INode} implementation for String-long indexes. </strong>
+ * 
+ * @author Fernando Campos Silva Dal Maria
+ * @version 1.0.0
+ */
 public class SNode implements INode<SNode> {
     
     // Attributes
 
+    private final int KEY_BYTES = 30; // Size of the key in bytes
+
     private String key;
     private long value;
-
-    private final int KEY_BYTES = 30;
 
     // Constructors
 

@@ -8,13 +8,19 @@ import java.io.IOException;
 
 import crud.indexes.types.interfaces.INode;
 
+/**
+ * <strong> A {@code INode} implementation for int-long indexes. </strong>
+ * 
+ * @author Fernando Campos Silva Dal Maria
+ * @version 1.0.0
+ */
 public class NNode implements INode<NNode> {
     
     // Attributes
 
-    public static final int BYTES = Integer.BYTES + Long.BYTES;
+    public static final int BYTES = Integer.BYTES + Long.BYTES; // Size of the node in bytes
 
-    private int key;
+    private int key; 
     private long value;
 
     public NNode() {
