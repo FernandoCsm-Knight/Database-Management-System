@@ -1,3 +1,14 @@
+/**
+ * A class representing a Show object that extends the Register class
+ * and implements the DateFormatter interface.
+ * 
+ * @see components.interfaces.DateFormatter
+ * @see components.interfaces.Register
+ * 
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
+ * @version 1.0.0
+ */
+
 package components;
 
 import java.util.Comparator;
@@ -15,21 +26,20 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
- * The class {@code Show} represents a show register.
- * @author Fernando Campos Silva Dal Maria & Bruno Santiago de Oliveira
- * @version 1.0.0
- * 
- * @see {@link components.interfaces.Register}
- * @see {@link components.interfaces.DateFormatter}
+ * A class representing a Show object that extends the Register class
+ * and implements the DateFormatter interface.
  */
-public class Show implements Register<Show>, DateFormatter {
+public class Show extends Register<Show> implements DateFormatter {
 
    // Constants
-
-   public int MAX_REGISTER_SIZE = 500;
+   
+   /**
+    * The maximum size of the register.
+    */
+   public static int MAX_REGISTER_SIZE = 500;
 
    /**
-    * Map that corelates a property name with it`s comparator.
+    * A map of properties and their comparators for Show objects.
     */
    public static Map<String, Comparator<Show>> properties = new HashMap<String, Comparator<Show>>(){{
       put("id", (Show s1, Show s2) -> s1.getId() - s2.getId());
@@ -45,35 +55,38 @@ public class Show implements Register<Show>, DateFormatter {
 
    // Attributes
 
-   private int showId = -1; // Auto-incremented ID
+   private Integer id = -1; // -1 means that the id is not set
    private String type; // Movie or TV Show
-   private String title; // Show title
-   private String directors; // Show directors
-   private Date dateAdded; // Date added to Netflix
-   private short releaseYear; // Show release year
-   private String duration; // Show duration
-   private String listedIn; // Show categories
-   private String description; // Show description
+   private String title; // The title of the show
+   private String directors; // The directors of the show
+   private Date dateAdded; // The date the show was added to Netflix
+   private Short releaseYear = -1; // The release year of the show
+   private String duration; // The duration of the show 
+   private String listedIn; // The categories the show is listed in
+   private String description; // The description of the show
 
    // Constructors
 
    /**
-    * Creates a new Show object with default values.
+    * Default constructor for the Show class.
+    * Initializes attributes with default values.
     */
    public Show() {
       this("", "", "", new Date(), (short)-1, "", "", "");
    }
 
    /**
-    * Creates a new Show object with the given values.
-    * @param type show type
-    * @param title show title
-    * @param directors show directors
-    * @param dateAdded date added to Netflix
-    * @param releaseYear show release year
-    * @param duration show duration
-    * @param listedIn show categories
-    * @param description show description
+    * Parameterized constructor for the Show class.
+    * Initializes attributes with provided values.
+    *
+    * @param type        The type of the show.
+    * @param title       The title of the show.
+    * @param directors   The directors of the show.
+    * @param dateAdded   The date the show was added.
+    * @param releaseYear The release year of the show.
+    * @param duration    The duration of the show.
+    * @param listedIn    The categories the show is listed in.
+    * @param description The description of the show.
     */
    public Show(String type, String title, String directors, Date dateAdded, short releaseYear, String duration, String listedIn, String description) {
       this.type = type;
@@ -89,148 +102,229 @@ public class Show implements Register<Show>, DateFormatter {
    // Getters
 
    /**
-    * Returns the show id.
-    * @return the show id.
+    * Get the ID of the show.
+    *
+    * @return The ID of the show.
     */
    @Override
    public int getId() {
-      return showId;
+      return id;
    }
 
    /**
-    * Returns the show type.
-    * @return the show type.
+    * Get the type of the show.
+    *
+    * @return The type of the show.
     */
    public String getType() {
       return type;
    }
 
    /**
-    * Returns the show title.
-    * @return the show title.
+    * Get the title of the show.
+    *
+    * @return The title of the show.
     */
    public String getTitle() {
       return title;
    }
 
    /**
-    * Returns the show directors.
-    * @return the show directors.
+    * Get the directors of the show.
+    *
+    * @return The directors of the show.
     */
    public String getDirectors() {
       return directors;
    }
 
    /**
-    * Returns the show categories.
-    * @return the show categories.
+    * Get the categories in which the show is listed.
+    *
+    * @return The categories in which the show is listed.
     */
    public String getListedIn() {
       return listedIn;
    }
 
    /**
-    * Returns the date added to Netflix.
-    * @return the date added to Netflix.
+    * Get the date when the show was added.
+    *
+    * @return The date when the show was added.
     */
    public Date getDateAdded() {
       return dateAdded;
    }
 
    /**
-    * Returns the show release year.
-    * @return the show release year.
+    * Get the release year of the show.
+    *
+    * @return The release year of the show.
     */
    public short getReleaseYear() {
       return releaseYear;
    }
 
    /**
-    * Returns the show duration.
-    * @return the show duration.
+    * Get the duration of the show.
+    *
+    * @return The duration of the show.
     */
    public String getDuration() {
       return duration;
    }
 
    /**
-    * Returns the show description.
-    * @return the show description.
+    * Get the description of the show.
+    *
+    * @return The description of the show.
     */
    public String getDescription() {
       return description;
    }
 
-   // Setters
-
    /**
-    * Sets the show id.
-    * @param showId the show id.
+    * Get the value associated with the specified key.
+    *
+    * @param key The key to look up.
+    * @return The value associated with the key.
+    * @throws IllegalArgumentException If an invalid key is provided.
     */
    @Override
-   public void setId(int showId) {
-      this.showId = showId;
+   public Object get(String key) {
+      switch(key) {
+         case "id": return this.getId();
+         case "type": return this.getType();
+         case "title": return this.getTitle();
+         case "directors": return this.getDirectors();
+         case "dateAdded": return this.getDateAdded();
+         case "releaseYear": return this.getReleaseYear();
+         case "duration": return this.getDuration();
+         case "listedIn": return this.getListedIn();
+         case "description": return this.getDescription();
+         default: throw new IllegalArgumentException("Invalid key: " + key);
+      }
    }
 
    /**
-    * Sets the show type.
-    * @param type the show type.
+    * Get a map of properties with their corresponding comparators for Show objects.
+    *
+    * @return A map of properties and their comparators.
+    */
+   @Override
+   public Map<String, Comparator<Show>> getProperties() {
+      return properties;
+   }
+
+   /**
+    * Get the attribute used for B+ tree indexing.
+    *
+    * @return The attribute used for B+ tree indexing (in this case, "id").
+    */
+   @Override
+   public String getBPlusTreeAttribute() {
+      return "id";
+   }
+
+   /**
+    * Get the attribute used for extensible hash indexing.
+    *
+    * @return The attribute used for extensible hash indexing (in this case, "id").
+    */
+   @Override
+   public String getExtensibleHashAttribute() {
+      return "id";
+   }
+
+   /**
+    * Get an array of attributes used for inverted indexing.
+    *
+    * @return An array of attributes used for inverted indexing (in this case, "title", "type", "duration").
+    */
+   @Override
+   public String[] getInvertedIndexAttributes() {
+      return new String[] {"title", "type", "duration"};
+   }
+
+   // Setters
+
+   /**
+    * Set the ID of the show.
+    *
+    * @param id The ID to set.
+    */
+   @Override
+   public void setId(int id) {
+      this.id = id;
+   }
+
+   /**
+    * Set the type of the show.
+    *
+    * @param type The type to set.
     */
    public void setType(String type) {
       this.type = type;
    }
 
    /**
-    * Sets the show title.
-    * @param title the show title.
+    * Set the title of the show.
+    *
+    * @param title The title to set.
     */
    public void setTitle(String title) {
       this.title = title;
    }
 
    /**
-    * Sets the show directors.
-    * @param directors the show directors.
+    * Set the directors of the show.
+    *
+    * @param directors The directors to set.
     */
    public void setDirectors(String directors) {
       this.directors = directors;
    }
 
    /**
-    * Sets the show categories.
-    * @param listedIn the show categories.
+    * Set the categories in which the show is listed.
+    *
+    * @param listedIn The categories to set.
     */
    public void setListedIn(String listedIn) {
       this.listedIn = listedIn;
    }
 
    /**
-    * Sets the date added to Netflix.
-    * @param dateAdded the date added to Netflix.
+    * Set the date when the show was added.
+    *
+    * @param dateAdded The date when the show was added.
     */
    public void setDateAdded(Date dateAdded) {
       this.dateAdded = dateAdded;
    }
 
    /**
-    * Sets the show release year.
-    * @param releaseYear the show release year.
+    * Set the release year of the show.
+    *
+    * @param releaseYear The release year to set.
     */
    public void setReleaseYear(short releaseYear) {
       this.releaseYear = releaseYear;
    }
 
    /**
-    * Sets the show duration.
-    * @param duration the show duration.
+    * Set the duration of the show.
+    *
+    * @param duration The duration to set.
     */
    public void setDuration(String duration) {
       this.duration = duration;
    }
 
    /**
-    * Sets the show description.
-    * @param description the show description.
+    * Set the description of the show.
+    *
+    * @param description The description to set.
     */
    public void setDescription(String description) {
       this.description = description;
@@ -239,12 +333,13 @@ public class Show implements Register<Show>, DateFormatter {
    // Methods
 
    /**
-    * Populates the Show object with the given array values.
-    * @param arr array of values to populate the Show object
+    * Populate the Show object from an array of strings.
+    *
+    * @param arr An array of strings containing the show's attributes.
     */
    @Override
    public void from(String... arr) {
-      this.showId = Integer.parseInt(arr[0].substring(1));
+      this.id = Integer.parseInt(arr[0].substring(1));
       this.type = arr[1];
       this.title = arr[2];
       this.directors = arr[3];
@@ -256,10 +351,11 @@ public class Show implements Register<Show>, DateFormatter {
    }
 
    /**
-     * Returns a {@link Date} object from a given date string.
-     * @param date the date string.
-     * @return a {@link Date} object from a given date string.
-     */
+    * Parse a string representation of a date into a Date object.
+    *
+    * @param originalDate The original date string to parse.
+    * @return The parsed Date object.
+    */
    @Override
    public Date dateParser(String originalDate) {
       String str  = null;
@@ -288,8 +384,10 @@ public class Show implements Register<Show>, DateFormatter {
    }
 
    /**
-    * Returns the register as an array of {@code bytes}.
-    * @return the register as an array of {@code bytes}.
+    * Convert the Show object to a byte array.
+    *
+    * @return A byte array representing the serialized Show object.
+    * @throws IOException If an I/O error occurs during serialization.
     */
    @Override
    public byte[] toByteArray() throws IOException {
@@ -305,12 +403,19 @@ public class Show implements Register<Show>, DateFormatter {
       dos.writeUTF(this.getDuration());
       dos.writeUTF(this.getListedIn());
       dos.writeUTF(this.getDescription());
-      return baos.toByteArray();
+
+      byte[] b = baos.toByteArray();
+      dos.close();
+      baos.close();
+      
+      return b;
    }
 
    /**
-    * Populates a register with the given array of {@code bytes}.
-    * @param b array of {@code bytes} to populate the register.
+    * Populate the Show object from a byte array.
+    *
+    * @param b A byte array representing the serialized Show object.
+    * @throws IOException If an I/O error occurs during deserialization.
     */
    @Override
    public void fromByteArray(byte[] b) throws IOException {
@@ -326,16 +431,20 @@ public class Show implements Register<Show>, DateFormatter {
       this.setDuration(dis.readUTF());
       this.setListedIn(dis.readUTF());
       this.setDescription(dis.readUTF());
+
+      dis.close();
+      bais.close();
    }
 
    /**
-    * Returns a JSON-formatted string representation of the Show object.
-    * @return a JSON-formatted string representation of the Show object
+    * Convert the Show object to a JSON string representation.
+    *
+    * @return A JSON string representing the Show object.
     */
    @Override
    public String toString() {
       StringBuffer sb = new StringBuffer("{\n");
-      sb.append("\t" + "\"showId\": " + "\"" + this.getId() + "\"" + ",\n");
+      sb.append("\t" + "\"id\": " + "\"" + this.getId() + "\"" + ",\n");
       sb.append("\t" + "\"type\": " + "\"" + this.getType() + "\"" + ",\n");
       sb.append("\t" + "\"title\": " + "\"" + this.getTitle().replaceAll("\"", "\'") + "\"" + ",\n");
       sb.append("\t" + "\"directors\": " + "\"" + this.getDirectors().replaceAll("\"", "\'") + "\"" + ",\n");
@@ -348,9 +457,10 @@ public class Show implements Register<Show>, DateFormatter {
    }
 
    /**
-    * Sets the object especific attribute with the given value.
-    * @param key the attribute name
-    * @param value the attribute value
+    * Set the value of an attribute in the Show object using a key.
+    *
+    * @param key The key corresponding to the attribute to set.
+    * @param value The value to set for the attribute.
     */
    @Override
    public void set(String key, Object value) {
@@ -369,9 +479,10 @@ public class Show implements Register<Show>, DateFormatter {
    }
 
    /**
-    * Determines if this Show object is equal to the specified object.
-    * @param o the object to compare
-    * @return true if the objects are equal, false otherwise
+    * Check if the Show object is equal to another object.
+    *
+    * @param o The object to compare.
+    * @return True if the objects are equal, false otherwise.
     */
    @Override 
    public boolean equals(Object o) {
@@ -379,33 +490,22 @@ public class Show implements Register<Show>, DateFormatter {
    }
 
    /**
-    * Compare a Object with the specified show attribute.
-    * @param key the show attribute to compare
-    * @param obj the object to compare
-    */
-   @Override 
-   public int compare(String key, Object obj) {
-      switch(key) {
-         case "id": return ((Integer)this.getId()).compareTo((Integer)obj);
-         case "type": return this.getType().compareTo((String)obj);
-         case "title": return this.getTitle().compareTo((String)obj);
-         case "directors": return this.getDirectors().compareTo((String)obj);
-         case "dateAdded": return this.getDateAdded().compareTo((Date)obj);
-         case "releaseYear": return ((Short)this.getReleaseYear()).compareTo((Short)obj);
-         case "duration": return this.getDuration().compareTo((String)obj);
-         case "listedIn": return this.getListedIn().compareTo((String)obj);
-         case "description": return this.getDescription().compareTo((String)obj);
-         default: throw new IllegalArgumentException("Invalid key: " + key + " for Show class.");	
-      }
-   }
-
-   /**
-    * Returns a clone of this Show object.
-    * @return a clone of this Show object
+    * Create a clone of the Show object.
+    *
+    * @return A new Show object that is a clone of the current object.
     */
    @Override 
    public Show clone() {
-      Show show = new Show(this.getType(), this.getTitle(), this.getDirectors(), this.getDateAdded(), this.getReleaseYear(), this.getDuration(), this.getListedIn(), this.getDescription());
+      Show show = new Show(
+         this.getType(), 
+         this.getTitle(), 
+         this.getDirectors(), 
+         this.getDateAdded(), 
+         this.getReleaseYear(), 
+         this.getDuration(), 
+         this.getListedIn(), 
+         this.getDescription()
+      );
       show.setId(this.getId());
       return show;
    }

@@ -6,9 +6,9 @@ import org.junit.Test;
 
 import components.Show;
 import crud.CRUD;
-import crud.karnel.SortedFile;
-import crud.karnel.SortedFileHeap;
-import crud.karnel.SortedFileSecond;
+import crud.sorts.SortedFileFirst;
+import crud.sorts.SortedFileHeap;
+import crud.sorts.SortedFileSecond;
 
 public class SortedFileTest {
 
@@ -19,7 +19,7 @@ public class SortedFileTest {
       CRUD<Show> crud = new CRUD<Show>("src/test/java/data/arc.db", Show.class.getConstructor());
       crud.populateAll(basePath);
       
-      SortedFile<Show> sorted = new SortedFile<Show>("src/test/java/data/arc.db", 500, Show.properties.get("title"), Show.class.getConstructor());
+      SortedFileFirst<Show> sorted = new SortedFileFirst<Show>("src/test/java/data/arc.db", 500, Show.properties.get("title"), Show.class.getConstructor());
       sorted.sort();
       
       // crud.toJsonFile("src/test/java/data/out.json");

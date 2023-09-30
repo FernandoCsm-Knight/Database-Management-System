@@ -1,8 +1,21 @@
 /**
-
-@author Fernando Campos Silva Dal Maria & Bruno Santiago de Oliveira
-@version 1.0.0
-*/
+ * An interface for date formatting and parsing.
+ * 
+ * <p>
+ * The date format used for formatting and parsing dates.
+ * </p>
+ * 
+ * <p>
+ * A map to convert month names to their corresponding numerical values.
+ * </p>
+ * 
+ * <p>
+ * Parses the input date string and returns a Date object.
+ * </p>
+ * 
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
+ * @version 1.0.0
+ */
 
 package components.interfaces;
 
@@ -12,21 +25,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The interface {@code DateFormatter} represents a date formatter for crud entities.
- * @author Fernando Campos Silva Dal Maria & Bruno Santiago de Oliveira
- * @version 1.0.0
+ * A interface for date formatting and parsing.
  */
 public interface DateFormatter {
-
     /**
-     * Attribute that holds a {@link SimpleDateFormat} initialized with a default pattern.
+     * The date format used for formatting and parsing dates.
      */
     final SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
 
     /**
-     * Map that corelates a month name with it`s number.
+     * A map to convert month names to their corresponding numerical values.
      */
-    final Map<String, String> months = new HashMap<String, String>(){{
+    final Map<String, String> months = new HashMap<String, String>() {{
         put("January","01");
         put("February","02");
         put("March","03");
@@ -42,9 +52,10 @@ public interface DateFormatter {
     }};
 
     /**
-     * Returns a {@link Date} object from a given date string.
-     * @param date the date string.
-     * @return a {@link Date} object from a given date string.
+     * Parses the input date string and returns a Date object.
+     *
+     * @param date The date string to be parsed.
+     * @return A Date object representing the parsed date.
      */
     Date dateParser(String date);
 }

@@ -1,12 +1,15 @@
-import components.Show;
-import crud.CRUD;
+import layout.menus.MainMenu;
 
+/**
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
+ * @version 1.0.0
+ */
 public class Main {
-    
-    public static void main(String args) throws Exception {
-        CRUD<Show> crud = new CRUD<>("src/main/java/data/database.db", Show.class.getConstructor());
-        crud.populateAll("src/main/java/data/bases/netflix_titles.csv");
-        crud.toJsonFile();
+
+    public static void main(String[] args) throws Exception {
+        MainMenu menu = new MainMenu();
+        menu.build();
+        menu.close();
     }
 
 }

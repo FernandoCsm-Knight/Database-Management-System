@@ -9,45 +9,46 @@ import components.interfaces.Register;
 import logic.SystemSpecification;
 
 /**
- * The class {@code BinaryArchive} represents a binary archive for a {@link crud.karnel.DataBase}.
- * @author Fernando Campos Silva Dal Maria & Bruno Santiago de Oliveira
+ * A generic binary archive for reading and writing objects of a specified type.
+ *
+ * @param <T> The type of objects to be stored in the archive.
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @version 1.0.0
- * 
- * @see {@link components.interfaces.Register}
  */
-public class BinaryArchive<T extends Register<T>> extends SystemSpecification {
+public class BinaryArchive<T extends Register<T>> implements SystemSpecification {
 
     // Attributes
 
-    private long lastPosition = 0; // used to keep track of the last position of the file pointer
+    /**
+     * The last read/write position in the binary archive file.
+     */
+    private long lastPosition = 0; 
     
-    public final String label; // used to identify the archive
-    public final String filePath; // used to identify the file path
-    public RandomAccessFile file; // used to access the file
-    public Constructor<T> constructor; // used to create a new instance of the register
+    public final String label;  // Label for the archive
+    public final String filePath; // Path for the archive
+    public RandomAccessFile file; // File object for the archive
+    public Constructor<T> constructor; // Constructor for the objects to be stored in the archive
 
     // Constructors
 
     /**
-     * Constructs a new {@code BinaryArchive} with the given file path and constructor.
-     * @param path the file path of the archive.
-     * @param constructor the constructor of the register.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.IOException}
+     * Creates a BinaryArchive with a specified file path and constructor.
+     *
+     * @param path        The file path where the binary archive is stored.
+     * @param constructor The constructor for creating objects of type T.
+     * @throws IOException If an I/O error occurs while creating the archive.
      */
     public BinaryArchive(String path, Constructor<T> constructor) throws IOException {
         this(null, path, constructor);
     }
 
     /**
-     * Constructs a new {@code BinaryArchive} with the given label, file path and constructor.
-     * @param label the label of the archive.
-     * @param path the file path of the archive.
-     * @param constructor the constructor of the register.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.IOException}
+     * Creates a BinaryArchive with a specified label, file path, and constructor.
+     *
+     * @param label       The label associated with the binary archive.
+     * @param path        The file path where the binary archive is stored.
+     * @param constructor The constructor for creating objects of type T.
+     * @throws IOException If an I/O error occurs while creating the archive.
      */
     public BinaryArchive(String label, String path, Constructor<T> constructor) throws IOException {
         this.label = label;
@@ -58,10 +59,9 @@ public class BinaryArchive<T extends Register<T>> extends SystemSpecification {
     // Methods
 
     /**
-     * Clear the archive, setting it`s length to 0.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.IOException}
+     * Clears the contents of the binary archive.
+     *
+     * @throws IOException If an I/O error occurs while clearing the archive.
      */
     public void clear() throws IOException {
         this.file = new RandomAccessFile(new File(this.filePath), "rw");
@@ -71,11 +71,10 @@ public class BinaryArchive<T extends Register<T>> extends SystemSpecification {
     }
 
     /**
-     * Read a binary array and converts it to a register.
-     * @return the new register from type {@code T}.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.IOException}
+     * Reads an object of type T from the binary archive.
+     *
+     * @return The read object or null if the end of the archive is reached.
+     * @throws IOException If an I/O error occurs while reading the object.
      */
     public T _readObj() throws IOException {
         this.lastPosition = this.file.getFilePointer();
@@ -100,12 +99,38 @@ public class BinaryArchive<T extends Register<T>> extends SystemSpecification {
     }
 
     /**
-     * Read a binary array from the file settend in the {@code RandomAccessFile} and converts it to a register.
-     * @param f the {@code RandomAccessFile} object to read from.
-     * @return the new register from type {@code T}.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.RandomAccessFile}
+     * Reads an object of type T with a specified length from the binary archive.
+     *
+     * @param len The length of the object data to read.
+     * @return The read object or null if the end of the archive is reached.
+     * @throws IOException If an I/O error occurs while reading the object.
+     */
+    public T _readObj(int len) throws IOException {
+        this.lastPosition = this.file.getFilePointer();
+        T obj = null;
+
+        if(this.file.getFilePointer() < this.file.length()) {
+            byte[] b = new byte[len];
+            this.file.read(b);
+            
+            try {
+                obj = this.constructor.newInstance();
+                obj.fromByteArray(b);
+            } catch(Exception e) {
+                System.err.println("Could not make a new instanse of " + this.constructor.getName());
+                e.printStackTrace();
+            }
+        }
+
+        return obj;
+    }
+
+    /**
+     * Reads an object of type T from a specified RandomAccessFile.
+     *
+     * @param f The RandomAccessFile from which to read the object.
+     * @return The read object or null if the end of the file is reached.
+     * @throws IOException If an I/O error occurs while reading the object.
      */
     public T readObjFrom(RandomAccessFile f) throws IOException {
         T obj = null;
@@ -129,21 +154,17 @@ public class BinaryArchive<T extends Register<T>> extends SystemSpecification {
     }
 
     /**
-     * Return the file pointer to the start of the last register readed.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.IOException}
+     * Sets the file pointer to the last read/write position.
      */
     public void _returnOneRegister() throws IOException {
         this.file.seek(this.lastPosition);
     }
 
     /**
-     * Write a register to a binary file.
-     * @param obj the register to be written.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.IOException}
+     * Writes an object of type T to the binary archive.
+     *
+     * @param obj The object to write to the archive.
+     * @throws IOException If an I/O error occurs while writing the object.
      */
     public void _writeObj(T obj) throws IOException {
         if(obj != null) {
@@ -153,13 +174,12 @@ public class BinaryArchive<T extends Register<T>> extends SystemSpecification {
             this.file.write(b);
         }
     }
-    
+
     /**
-     * Write a register array to a binary file.
-     * @param arr the register array to be written.
-     * @throws IOException if an I/O error occurs.
-     * 
-     * @see {@link java.io.IOException}
+     * Writes an array of objects of type T to the binary archive.
+     *
+     * @param arr The array of objects to write to the archive.
+     * @throws IOException If an I/O error occurs while writing the objects.
      */
     public void _writeObjs(T[] arr) throws IOException {
         for(int i = 0; i < arr.length; i++)
@@ -167,19 +187,20 @@ public class BinaryArchive<T extends Register<T>> extends SystemSpecification {
     }
 
     /**
-     * Tests if the file pointer is at the end of the file.
-     * @return {@code true} if the file pointer is at the end of the file, {@code false} otherwise.
-     * 
-     * @see {@link java.io.IOException}
+     * Checks if the end of the binary archive file is reached.
+     *
+     * @return True if the end of the file is reached, false otherwise.
+     * @throws IOException If an I/O error occurs while checking the end of the file.
      */
     public boolean _isEOF() throws IOException {
-        return this.file.getFilePointer() >= this.file.length();
+        return this.file.getFilePointer() == this.file.length();
     }
 
-        /**
-     * Changes all pointers of a given array of files to the beginning of the file.
-     * @param arr the array of files.
-     * @throws IOException if an I/O error occurs.
+    /**
+     * Resets the file pointers of an array of BinaryArchives to the beginning of their respective files.
+     *
+     * @param arr The array of BinaryArchives to reset.
+     * @throws IOException If an I/O error occurs while resetting the file pointers.
      */
     public void _resetFilePointers(BinaryArchive<T>[] arr) throws IOException {
         for(int k = 0; k < arr.length; k++)
