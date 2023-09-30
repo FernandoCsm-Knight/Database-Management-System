@@ -11,7 +11,7 @@ import utils.datastructs.HeapNode;
 
 /**
  * The {@code SortedFileHeap} class represents a file that can be sorted by any attribute from type {@code T} register using a heap method.
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @version 1.0.0
  * 
  * @see {@link components.interfaces.Register}
@@ -42,7 +42,6 @@ public class SortedFileHeap<T extends Register<T>> extends SortedFile<T> {
      */
     public SortedFileHeap(String path, int registerSize, Comparator<T> comparator, Constructor<T> constructor) throws IOException {
         super(path, registerSize, comparator, constructor);
-        this.setBranches(3);
     }
 
     // Private Methods
@@ -61,7 +60,7 @@ public class SortedFileHeap<T extends Register<T>> extends SortedFile<T> {
 
         long length = this.database.length();
         while(this.database.getPosition() < length) {
-            T obj = this.database.readObj();
+            T obj = this.database.readObj().body;
 
             if(heap.size() == this.originalNumberOfRegistersPerBlock) {
                 HeapNode<T> tmp;

@@ -48,7 +48,7 @@ import logic.SystemSpecification;
  * bucket is specified in the constructor.
  * </p>
  * 
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @see crud.indexes.hash.Directory
  * @see crud.indexes.hash.Bucket
  * 
@@ -58,13 +58,14 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
     
     // Attributes
 
-    private String path; // Path of the index
-    private Directory directory; // Directory of the index
-    private RandomAccessFile file; // File of the index
-    private Constructor<T> constructor; // Constructor of the keys
-    private boolean isRedundant = false; // If the index is redundant
-    
+    private final String path; // Path of the index
     private final int bucketLength; // Maximum number of keys in a bucket
+    private final Directory directory; // Directory of the index
+    private final Constructor<T> constructor; // Constructor of the keys
+    
+    private boolean isRedundant = false; // If the index is redundant
+    private RandomAccessFile file; // File of the index
+    
     public final int BUCKET_BYTES; // Size of a bucket in bytes
 
     // Constructor
@@ -93,14 +94,40 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
         this.constructor = constructor;
         this.path = INDEXES_FILES_DIRECTORY + path;
         this.directory = new Directory(directoryPath);
-        this.bucketLength = Logic.database.blockFactor(1000);
-        this.BUCKET_BYTES = new Bucket<T>(bucketLength, (byte)0, constructor).BYTES;
+        this.bucketLength = Logic.database.blockFactor(this.constructor.newInstance().getBytes());
+        this.BUCKET_BYTES = new Bucket<T>(bucketLength, (byte)1, constructor).BYTES;
         this.init();
     }
 
+    /**
+     * Creates a new ExtensibleHash with a given path for the {@code .db} file.
+     * 
+     * @param path Path to the {@code .db} file
+     * @param constructor Constructor of the keys
+     * @param isRedundant If the index is redundant
+     * @throws Exception 
+     */
     public ExtensibleHash(String path, Constructor<T> constructor, boolean isRedundant) throws Exception {
-        this(path, constructor);
+        if(!path.endsWith(".db"))
+            throw new IllegalArgumentException("Path to a extensible hash index must end with \".db\".");
+
+        StructureValidation.createIndexesDirectory();
+
+        File file = new File(INDEXES_FILES_DIRECTORY);
+        String[] filePaths = file.list();
+
+        String directoryPath = UUID.randomUUID().toString() + path;
+        for(int i = 0; i < filePaths.length; i++) 
+            if(filePaths[i].endsWith(path) && !filePaths[i].equals(path))
+                directoryPath = filePaths[i];
+
         this.isRedundant = isRedundant;
+        this.constructor = constructor;
+        this.path = INDEXES_FILES_DIRECTORY + path;
+        this.directory = new Directory(directoryPath);
+        this.bucketLength = Logic.database.blockFactor(this.constructor.newInstance().getBytes()) * 3;
+        this.BUCKET_BYTES = new Bucket<T>(bucketLength, (byte)1, constructor).BYTES;
+        this.init();
     }
 
     // Public Methods
@@ -119,7 +146,7 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
      * 
      * @throws IOException
      */
-    public void reset() throws IOException {
+    public void clear() throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
         this.file.setLength(0);
         this.file.close();
@@ -146,7 +173,7 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
 
         if(bucket.isFull()) {
             T[] keys = bucket.getKeys();
-            byte localDepth = (byte)(bucket.getLocalDepth() + 1);
+            byte localDepth = (byte)(bucket.getLocalDepth() + (byte)1);
 
             if(bucket.getLocalDepth() == this.directory.getGlobalDepth()) 
                 this.directory.doubleSize();
@@ -165,13 +192,17 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
                 replace = !replace;
             }
 
-            for(int i = 0; i < keys.length; i++) {
+            for(int i = 0; i < keys.length; i++) 
                 this.insert(keys[i].getKey(), keys[i].getValue());
-            }
+
             this.insert(key, value);
         } else {
             bucket.add(key, value);
             this.writeBucket(bucket, address);
+        }
+
+        if(key.equals("The Walking Dead")) {
+            System.out.println("File: " + path + this.directory.getAddress(key));
         }
 
         return true;
@@ -193,7 +224,6 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
         boolean res = bucket.delete(key);
         this.writeBucket(bucket, address);
         return res;
-
     }
 
     /**
@@ -364,29 +394,4 @@ public class ExtensibleHash<T extends INode<T>> implements SystemSpecification {
         this.file.write(bucket.toByteArray());
         this.file.close();
     }
-
-    // If you want to filter some words from the index, use this method
-    //
-    // private String[] filter(String[] strs) {
-    //     HashSet<String> hash = new HashSet<>();
-
-    //     hash.add("a");
-    //     hash.add("o");
-    //     hash.add("ao");
-    //     hash.add("da");
-    //     hash.add("do");
-    //     hash.add("das");
-    //     hash.add("dos");
-    //     hash.add("de");
-    //     hash.add("e");
-
-    //     ArrayList<String> arr = new ArrayList<>();
-
-    //     for(int i = 0; i < strs.length; i++) 
-    //         if(!hash.contains(strs[i])) 
-    //             arr.add(strs[i]);
-
-    //     String[] newStrs = new String[arr.size()];
-    //     return arr.toArray(newStrs);
-    // }
 }

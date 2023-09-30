@@ -25,7 +25,7 @@ import crud.indexes.types.interfaces.INode;
  * the tree.
  * </p>
  * 
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @see crud.indexes.trees.BPlusTree
  * @see crud.indexes.types.interfaces.INode
  * @version 1.0.0
@@ -35,7 +35,7 @@ public class Page<T extends INode<T>> {
     // Attributes
 
     private int order; // Maximum number of keys
-    private Constructor<T> constructor; // Constructor of the keys
+    private final Constructor<T> constructor; // Constructor of the keys
 
     public T[] keys; // Keys
     public long[] children; // Children

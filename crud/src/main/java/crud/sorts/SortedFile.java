@@ -10,21 +10,21 @@ import java.util.UUID;
 import components.interfaces.Register;
 import crud.base.BinaryArchive;
 import crud.base.StructureValidation;
-import crud.karnel.DataBase;
+import crud.core.DataBase;
 import err.DatabaseValidationException;
 import logic.Logic;
 
 
 /**
  * The {@code SortedFile} class represents a file that can be sorted by any attribute from type {@code T} register.
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @version 1.0.0
  * 
  * @see {@link components.interfaces.Register}
  * @see {@link crud.BinaryArchive}
  */
 public abstract class SortedFile<T extends Register<T>> extends BinaryArchive<T> {
-    protected int NUMBER_OF_BRANCHES = 2; // Number of branches for the sort algorithm
+    protected int NUMBER_OF_BRANCHES = 3; // Number of branches for the sort algorithm
 
     protected final DataBase<T> database; // Original data file
     protected final int registerSize; // Size of each register in bytes
@@ -109,6 +109,10 @@ public abstract class SortedFile<T extends Register<T>> extends BinaryArchive<T>
         return true;
     }
 
+    /**
+     * Sets the number of branches for the sort algorithm.
+     * @param branches the number of branches for the sort algorithm.
+     */
     public void setBranches(int branches) {
         if(branches > 1)
             this.NUMBER_OF_BRANCHES = branches;
@@ -116,8 +120,31 @@ public abstract class SortedFile<T extends Register<T>> extends BinaryArchive<T>
             throw new DatabaseValidationException("The number of branches must be greater than 1.");
     }
 
+    /**
+     * Returns the number of branches for the sort algorithm.
+     * @return the number of branches for the sort algorithm.
+     */
     public int getBranches() {
         return this.NUMBER_OF_BRANCHES;
+    }
+
+    /**
+     * Sets the number of registers per block in the temporary files.
+     * @param numberOfRegistersPerBlock the number of registers per block in the temporary files.
+     */
+    public void setNumberOfRegistersPerBlock(int numberOfRegistersPerBlock) {
+        if(numberOfRegistersPerBlock > 1)
+            this.numberOfRegistersPerBlock = numberOfRegistersPerBlock;
+        else 
+            throw new DatabaseValidationException("The number of registers per block must be greater than 0.");
+    }
+
+    /**
+     * Returns the number of registers per block in the temporary files.
+     * @return the number of registers per block in the temporary files.
+     */
+    public int getNumberOfRegistersPerBlock() {
+        return this.numberOfRegistersPerBlock;
     }
 
     // Protected Methods

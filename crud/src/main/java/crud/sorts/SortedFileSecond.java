@@ -10,7 +10,7 @@ import crud.base.BinaryArchive;
 
 /**
  * The {@code SortedFileSecond} class represents a file that can be sorted by any attribute from type {@code T} register using a upgraded method.
- * @author Fernando Campos Silva Dal Maria 
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @version 1.0.0
  * 
  * @see {@link components.interfaces.Register}
@@ -41,7 +41,6 @@ public class SortedFileSecond<T extends Register<T>> extends SortedFile<T> {
      */
     public SortedFileSecond(String path, int registerSize, Comparator<T> comparator, Constructor<T> constructor) throws IOException {
         super(path, registerSize, comparator, constructor);
-        this.setBranches(4);
     }
 
     // Private Methods
@@ -61,7 +60,7 @@ public class SortedFileSecond<T extends Register<T>> extends SortedFile<T> {
     
         long length = this.database.length();
         while(this.database.getPosition() < length) {
-            arr.add(this.database.readObj());
+            arr.add(this.database.readObj().body);
 
             if(arr.size() == this.originalNumberOfRegistersPerBlock) {
                 arr.sort(this.comparator);

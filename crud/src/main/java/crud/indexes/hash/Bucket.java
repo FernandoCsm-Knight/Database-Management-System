@@ -23,7 +23,7 @@ import crud.indexes.types.interfaces.INode;
  * of the bucket.
  * </p>
  * 
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @see crud.indexes.hash.ExtensibleHash
  * @see crud.indexes.hash.Directory
  * @see crud.indexes.types.interfaces.INode
@@ -34,7 +34,7 @@ public class Bucket<T extends INode<T>> {
 
     // Attributes
 
-    private Constructor<T> constructor; // Constructor of the geneic {@code T extends INode} type.
+    private final Constructor<T> constructor; // Constructor of the geneic {@code T extends INode} type.
     private byte localDepth; // Local depth of the bucket
     private int length = 0; // Maximum number of keys
     private int size = 0; // Number of keys
@@ -251,9 +251,16 @@ public class Bucket<T extends INode<T>> {
      * @return The key if it was found, null otherwise
      */
     public T search(Object key) {
-        for (int i = 0; i < this.size; i++)
-            if (this.keys[i].compareTo(key) == 0)
-                return this.keys[i];
+        int l = 0, r = this.keys.length - 1;
+        while (l <= r) {
+            int m = l + (r - l) / 2;
+            if (this.keys[m].compareTo(key) == 0)
+                return this.keys[m];
+            if (this.keys[m].compareTo(key) < 0)
+                l = m + 1;
+            else
+                r = m - 1;
+        }
 
         return null;
     }
@@ -265,11 +272,18 @@ public class Bucket<T extends INode<T>> {
      * @return True if it was found, false otherwise
      */
     public boolean contains(Object key) {
-        boolean exists = false;
-        for (int i = 0; i < keys.length && !exists; i++)
-            exists = this.keys[i].compareTo(key) == 0;
+        int l = 0, r = this.keys.length - 1;
+        while (l <= r) {
+            int m = l + (r - l) / 2;
+            if (this.keys[m].compareTo(key) == 0)
+                return true;
+            if (this.keys[m].compareTo(key) < 0)
+                l = m + 1;
+            else
+                r = m - 1;
+        }
 
-        return exists;
+        return false;
     }
 
     /**
@@ -285,11 +299,18 @@ public class Bucket<T extends INode<T>> {
         node.setKey(key);
         node.setValue(value);
 
-        boolean exists = false;
-        for (int i = 0; i < keys.length && !exists; i++)
-            exists = this.keys[i].equals(node);
+        int l = 0, r = this.keys.length - 1;
+        while (l <= r) {
+            int m = l + (r - l) / 2;
+            if (this.keys[m].equals(node))
+                return true;
+            if (this.keys[m].compareTo(key) < 0)
+                l = m + 1;
+            else
+                r = m - 1;
+        }
 
-        return exists;
+        return false;
     }
 
     /**
@@ -297,7 +318,7 @@ public class Bucket<T extends INode<T>> {
      * 
      * @return Local depth of the bucket
      */ 
-    public int getLocalDepth() {
+    public byte getLocalDepth() {
         return this.localDepth;
     }
 

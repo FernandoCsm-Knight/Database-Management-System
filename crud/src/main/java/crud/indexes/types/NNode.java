@@ -11,7 +11,7 @@ import crud.indexes.types.interfaces.INode;
 /**
  * <strong> A {@code INode} implementation for int-long indexes. </strong>
  * 
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @version 1.0.0
  */
 public class NNode implements INode<NNode> {
@@ -20,18 +20,34 @@ public class NNode implements INode<NNode> {
 
     public static final int BYTES = Integer.BYTES + Long.BYTES; // Size of the node in bytes
 
-    private int key; 
-    private long value;
+    private int key; // Key 
+    private long value; // Value
 
+
+    /**
+     * Default constructor initializes the node with default values (-1).
+     */
     public NNode() {
         this(-1, -1);
     }
 
+    /**
+     * Parameterized constructor initializes the node with specified key and value.
+     * 
+     * @param key The key (int) for the node.
+     * @param value The value (long) for the node.
+     */
     public NNode(int key, long value) {
         this.key = key;
         this.value = value;
     }
 
+    /**
+     * Constructor that creates an NNode object from a byte array.
+     * 
+     * @param buffer The byte array containing the serialized node data.
+     * @throws IOException If there is an issue with deserialization.
+     */
     public NNode(byte[] buffer) throws IOException {
         this.fromByteArray(buffer);
     }
@@ -101,7 +117,7 @@ public class NNode implements INode<NNode> {
 
     @Override
     public int compareTo(Object other) {
-        return other instanceof Integer ? this.key - key : this.key - ((NNode)other).key;
+        return other instanceof Integer ? this.key - ((Integer)other) : this.key - ((NNode)other).key;
     }
 
     @Override

@@ -1,9 +1,5 @@
 package crud.indexes.hash;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -30,7 +26,7 @@ import logic.SystemSpecification;
  * buckets are duplicated.
  * </p>
  * 
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @see crud.indexes.hash.ExtensibleHash
  * @see crud.indexes.hash.Bucket
  * @version 1.0.0
@@ -39,9 +35,9 @@ public class Directory implements SystemSpecification {
     
     // Attributes
 
-    private String path;
+    private final String path;
     private long[] directory;
-    private byte globalDepth = 0;
+    private byte globalDepth = 1;
     private RandomAccessFile file;
 
     // Constructor
@@ -56,22 +52,18 @@ public class Directory implements SystemSpecification {
         if(!path.endsWith(".db"))
             throw new IllegalArgumentException("Path to a extensible hash index must end with \".db\".");
 
-
         this.path = INDEXES_FILES_DIRECTORY + path;
 
         this.file = new RandomAccessFile(this.path, "rw");
-
-        if(this.file.length() == 0) {
-            this.directory = new long[1];            
-            this.file.write(this.toByteArray());
-        } else {
-            byte[] buffer = new byte[(int)this.file.length()];
-            this.file.read(buffer);
-            
-            this.fromByteArray(buffer);
-        }
-
+        long length = this.file.length();
         this.file.close();
+
+        if(length == 0) {
+            this.directory = new long[1 << this.globalDepth];            
+            this.toBinaryFile();
+        } else {
+            this.fromBinaryFile();
+        }
     }
 
     // Public Methods
@@ -144,11 +136,7 @@ public class Directory implements SystemSpecification {
         }
         
         this.directory = newDirectory;
-
-        this.file = new RandomAccessFile(this.path, "rw");
-        this.file.seek(0);
-        this.file.write(this.toByteArray());
-        this.file.close();
+        this.toBinaryFile();
     }
 
     /**
@@ -159,54 +147,37 @@ public class Directory implements SystemSpecification {
     public void reset() throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
         this.file.setLength(0);
+        this.file.close();
+        
+        this.globalDepth = 1;
+        this.directory = new long[2];
+        this.toBinaryFile();
+    }
 
-        this.globalDepth = 0;
-        this.directory = new long[1];
-        this.file.write(this.toByteArray());
+    public void fromBinaryFile() throws IOException {
+        this.file = new RandomAccessFile(this.path, "rw");
+        this.file.seek(0);
 
+        this.globalDepth = this.file.readByte();
+        this.directory = new long[1 << this.globalDepth];
+        for(int i = 0; i < this.directory.length; i++) 
+            this.directory[i] = this.file.readLong();
+        
         this.file.close();
     }
 
-    /**
-     * Converts the {@code byte[]} that represents the the Directory 
-     * into a Directory object.
-     * 
-     * @param buffer Buffer to be filled
-     * @throws IOException 
-     */
-    public void fromByteArray(byte[] buffer) throws IOException {
-        ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
-        DataInputStream dis = new DataInputStream(bais);
+    public void toBinaryFile() throws IOException {
+        this.file = new RandomAccessFile(this.path, "rw");
 
-        this.globalDepth = dis.readByte();
-        this.directory = new long[1 << this.globalDepth];
+        this.file.setLength(0);
+        this.file.seek(0);
 
+        this.file.write(this.globalDepth);
         for(int i = 0; i < this.directory.length; i++) 
-            this.directory[i] = dis.readLong();
-        
-        dis.close();
-        bais.close();
-    }
+            this.file.writeLong(this.directory[i]);
 
-    /**
-     * Returns the {@code byte[]} representation of the Directory.
-     * 
-     * @return {@code byte[]} representation of the Directory
-     * @throws IOException
-     */
-    public byte[] toByteArray() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-
-        dos.writeByte(this.globalDepth);
-        for(int i = 0; i < this.directory.length; i++) 
-            dos.writeLong(this.directory[i]);
-
-        byte[] buffer = baos.toByteArray();
-        dos.close();
-        baos.close();
-        return buffer;
-    }
+        this.file.close();
+    }    
 
     /**
      * Returns the hash of the key for a specified depth.
@@ -216,7 +187,7 @@ public class Directory implements SystemSpecification {
      * @return Hash of the key
      */
     public int reHash(Object key, int depth) {
-        return key.hashCode() & ((1 << depth) - 1);
+        return (key.hashCode() < 0 ? - key.hashCode() : key.hashCode()) % (1 << depth);
     }
 
     @Override
@@ -242,6 +213,6 @@ public class Directory implements SystemSpecification {
      * @return Hash of the key
      */
     private int hash(Object key) {
-        return key.hashCode() & ((1 << this.globalDepth) - 1);
+        return (key.hashCode() < 0 ? - key.hashCode() : key.hashCode()) % (1 << this.globalDepth);
     }
 }

@@ -62,7 +62,7 @@ import logic.SystemSpecification;
  * </p>
  * 
  * 
- * @author Fernando Campos Silva Dal Maria
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
  * @see crud.indexes.types.interfaces.INode
  * @see crud.indexes.trees.Page
  * 
@@ -75,11 +75,12 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
     private static final int MIN_ORDER = 3; // Minimum order of the tree
     
-    private int order; // Maximum number of children a node can have
-    private String path; // Path of the B+ Tree file
+    private final int order; // Maximum number of children a node can have
+    private final String path; // Path of the B+ Tree file
+    private final Constructor<T> constructor; // Constructor of the node type
+    
     private long root = -1; // Address of the root node
     private RandomAccessFile file; // File of the B+ Tree
-    private Constructor<T> constructor; // Constructor of the node type
 
     // Delete auxiliar variables
 
@@ -103,6 +104,8 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
 
         if(order < MIN_ORDER) 
             throw new IllegalArgumentException("Order must be greater than " + MIN_ORDER);
+
+        StructureValidation.createIndexesDirectory();
 
         this.order = order;
         this.constructor = constructor;
@@ -129,7 +132,7 @@ public class BPlusTree<T extends INode<T>> implements SystemSpecification {
      * 
      * @throws IOException
      */
-    public void reset() throws IOException {
+    public void clear() throws IOException {
         this.file = new RandomAccessFile(this.path, "rw");
         this.file.setLength(0);
         this.file.close();

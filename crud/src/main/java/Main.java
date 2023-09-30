@@ -1,15 +1,15 @@
-import java.util.Arrays;
+import layout.menus.MainMenu;
 
-import crud.indexes.trees.BPlusTree;
-import crud.indexes.types.NNode;
-import logic.SystemSpecification;
-
-public class Main implements SystemSpecification {
+/**
+ * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
+ * @version 1.0.0
+ */
+public class Main {
 
     public static void main(String[] args) throws Exception {
-        BPlusTree<NNode> tree = new BPlusTree<>(8, "BPlusTree.db", NNode.class.getConstructor());
-
-        tree.toJsonFile();
+        MainMenu menu = new MainMenu();
+        menu.build();
+        menu.close();
     }
 
 }
