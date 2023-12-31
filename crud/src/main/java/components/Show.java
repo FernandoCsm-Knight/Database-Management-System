@@ -89,6 +89,7 @@ public class Show extends Register<Show> implements DateFormatter {
     * @param description The description of the show.
     */
    public Show(String type, String title, String directors, Date dateAdded, short releaseYear, String duration, String listedIn, String description) {
+      super();
       this.type = type;
       this.title = title;
       this.directors = directors;
@@ -467,7 +468,7 @@ public class Show extends Register<Show> implements DateFormatter {
       switch(key) {
          case "id": this.setId((int)value); break;
          case "type": this.setType((String)value); break;
-         case "title": this.setTitle((String)value); break;
+         case "title": this.setTitle(this.rsa.encrypt((String)value)); break;
          case "directors": this.setDirectors((String)value); break;
          case "dateAdded": this.setDateAdded((Date)value); break;
          case "releaseYear": this.setReleaseYear((short)value); break;
@@ -477,6 +478,36 @@ public class Show extends Register<Show> implements DateFormatter {
          default: throw new IllegalArgumentException("Invalid key: " + key);
       }
    }
+
+   /**
+    * Encrypt the Show object.
+    * 
+    * @return A new Show object with encrypted attributes.
+    */
+   @Override
+   public Show encrypt() {
+      Show encryptedShow = this.clone();
+      encryptedShow.id = this.id; 
+      encryptedShow.title = this.rsa.encrypt(this.title.replaceAll(",", "")); 
+      
+      return encryptedShow;
+   }
+
+   /**
+    * Decrypt the Show object.
+    *
+    * @return A new Show object with decrypted attributes.
+    */
+   @Override
+   public Show decript() {
+      Show decryptedShow = this.clone();
+      decryptedShow.id = this.id; 
+      decryptedShow.title = this.rsa.decrypt(this.title);
+      
+      return decryptedShow;
+   }
+
+   
 
    /**
     * Check if the Show object is equal to another object.

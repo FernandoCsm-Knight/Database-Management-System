@@ -57,4 +57,56 @@ public class Logic implements SystemSpecification {
         }
     }
 
+    /**
+     * The {@code compression} class contains several utility methods for performing
+     * various compression calculations.
+     */
+    public static class compression {
+
+        /**
+         * Calculates the compression ratio of a {@code double} number that represents
+         * 
+         * @param originalSize The size of the original file in bytes.
+         * @param compressedSize The size of the compressed file in bytes.
+         * @return The compression ratio of the file.
+         */
+        public static double compressionRatio(double originalSize, double compressedSize) {
+            return compressedSize / originalSize;
+        }
+
+        /**
+         * Calculates the compression factor of a {@code double} number that represents
+         * 
+         * @param originalSize The size of the original file in bytes.
+         * @param compressedSize The size of the compressed file inbytes.
+         * @return The compression factor of the file.
+         */
+        public static double compressionFactor(double originalSize, double compressedSize) {
+            return originalSize / compressedSize;
+        }
+
+        /**
+         * Calculates the space savings of a {@code double} number that represents
+         * 
+         * @param originalSize The size of the original file in bytes.
+         * @param compressedSize The size of the compressed file in bytes.
+         * @return The space savings of the file.
+         */
+        public static double spaceSavings(double originalSize, double compressedSize) {
+            return 1 - compressionRatio(originalSize, compressedSize);
+        }
+
+        /**
+         * Calculates the compression gain of a {@code double} number that represents
+         * 
+         * @param originalSize The size of the original file in bytes.
+         * @param compressedSize The size of the compressed file in bytes.
+         * @return The compression gain of the file.
+         */
+        public static double compressionGain(double originalSize, double compressedSize) {
+            return Math.log(compressionRatio(originalSize, compressedSize));
+        }
+
+    }
+
 }

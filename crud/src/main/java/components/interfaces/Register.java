@@ -21,8 +21,11 @@ package components.interfaces;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.Map;
+
+import crud.core.security.RSA;
 
 /**
  * An abstract meta class representing a generic register.
@@ -34,9 +37,20 @@ public abstract class Register<T> {
    // Variables
 
    /**
+    * The RSA object used to encript and decript the register.
+    */
+   protected RSA rsa; 
+
+   /**
     * The maximum size of the register.
     */
-   public static int MAX_REGISTER_SIZE = 1024; 
+   public static int MAX_REGISTER_SIZE = 64; 
+
+   // Standard contructor
+
+   public Register() {
+      rsa = new RSA(1024); // ou qualquer outro tamanho de bit desejado
+   }
 
    // Methods
 
@@ -120,6 +134,47 @@ public abstract class Register<T> {
     * @return An array of attributes for inverted indexing.
     */
    public abstract String[] getInvertedIndexAttributes();
+
+   /**
+    * Encript the appropriate attributes of the register.
+    *
+    * @return The encripted register.
+    */
+   public abstract T encrypt(); 
+
+   /**
+    * Decript the appropriate attributes of the register.
+    *
+    * @return The decripted register.
+    */
+   public abstract T decript();
+
+   /**
+    * Get the public exponent of the RSA object.
+    *
+    * @return The public exponent of the RSA object.
+    */
+   public BigInteger getPublicExponent() {
+      return rsa.getPublicExponent();
+   }
+
+   /**
+    * Get the modulus of the RSA object.
+    *
+    * @return The modulus of the RSA object.
+    */
+   public BigInteger getModulus() {
+      return rsa.getModulus();
+   }
+
+   /**
+    * Get the private exponent of the RSA object.
+    *
+    * @return The private exponent of the RSA object.
+    */
+   public BigInteger getPrivateExponent() {
+      return rsa.getPrivateExponent();
+   }
 
    /**
     * Compare the register based on a specified key and an object.

@@ -18,6 +18,42 @@ public final class StructureValidation implements SystemSpecification {
     public static void verifyDirectoryStructure() {
         createTemporaryDirectory();
         createJSONDirectory();
+        createJSONTrashDirectory();
+        createBackupDirectory();
+    }
+
+    /**
+     * Creates the backup directory if it does not exist.
+     */
+    public static void createBackupDirectory() {
+        File backupDirectory = new File(BACKUP_FILES_DIRECTORY);
+
+        if (!backupDirectory.exists()) {
+            backupDirectory.mkdir();
+        }
+
+        File huffmanDirectory = new File(HUFFMAN_FILES_DIRECTORY);
+
+        if (!huffmanDirectory.exists()) {
+            huffmanDirectory.mkdir();
+        }
+
+        File lzwDirectory = new File(LZW_FILES_DIRECTORY);
+
+        if (!lzwDirectory.exists()) {
+            lzwDirectory.mkdir();
+        }
+    }
+
+    /**
+     * Cleans the backup directory by deleting its contents.
+     */
+    public static void cleanBackupDirectory() {
+        File backupDirectory = new File(BACKUP_FILES_DIRECTORY);
+        if (backupDirectory.exists()) {
+            deleteDirectory(backupDirectory);
+            createBackupDirectory();
+        }
     }
 
     /**
@@ -41,6 +77,16 @@ public final class StructureValidation implements SystemSpecification {
     }
 
     /**
+     * Creates the JSON trash directory if it does not exist.
+     */
+    public static void createJSONTrashDirectory() {
+        File jsonTrashDirectory = new File(JSON_TRASH_FILES_DIRECTORY);
+        if (!jsonTrashDirectory.exists()) {
+            jsonTrashDirectory.mkdir();
+        }
+    }
+
+    /**
      * Creates the JSON index directory if it does not exist.
      */
     public static void createJSONIndexDirectory() {
@@ -48,6 +94,27 @@ public final class StructureValidation implements SystemSpecification {
         File indexDirectory = new File(JSON_INDEXES_DIRECTORY);
         if (!indexDirectory.exists()) {
             indexDirectory.mkdir();
+        }
+    }
+
+    /**
+     * Creates the JSON pattern matching directory if it does not exist.
+     */
+    public static void createJSONPatternMatchingDirectory() {
+        createJSONDirectory();
+        File patternMatchingDirectory = new File(JSON_PATTERN_MATCHING_DIRECTORY);
+        if (!patternMatchingDirectory.exists()) {
+            patternMatchingDirectory.mkdir();
+        }
+    }
+
+    /**
+     * Cleans the JSON pattern matching directory by deleting its contents.
+     */
+    public static void cleanJsonPatternMatchingDirectory() {
+        File patternMatchingDirectory = new File(JSON_PATTERN_MATCHING_DIRECTORY);
+        if (patternMatchingDirectory.exists()) {
+            deleteDirectory(patternMatchingDirectory);
         }
     }
 
@@ -104,7 +171,9 @@ public final class StructureValidation implements SystemSpecification {
         if (databaseFile.exists()) {
             File[] files = databaseFile.listFiles();
             for(int i = 0; i < files.length; i++) {
-                if (files[i].getName().endsWith(".json")) {
+                if (files[i].isDirectory() && files[i].getName().equals("trash")) {
+                    for(File file : files[i].listFiles()) file.delete();
+                } if (files[i].getName().endsWith(".json")) {
                     files[i].delete();
                 }
             }

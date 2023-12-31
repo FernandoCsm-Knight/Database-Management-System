@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Date;
 
 import components.Show;
 import crud.CRUD;
@@ -57,6 +58,9 @@ public class MainMenu implements AutoCloseable, SystemSpecification, MenuSpecifi
             System.out.println("4. Ordenação Externa");
             System.out.println("5. Teste de performace");
             System.out.println("6. Remover todos os dados");
+            System.out.println("7. Sistema de backup");
+            System.out.println("8. Sistema de busca por casamento de padrões");
+            System.out.println("9. Visualizar criptografia");
             System.out.println("0. Sair");
             System.out.print("Selecione uma opção: ");
 
@@ -68,7 +72,7 @@ public class MainMenu implements AutoCloseable, SystemSpecification, MenuSpecifi
                 continue;
             }
 
-            if(option >= 1 && option <= 6 && show == null) show = new CRUD<Show>("shows.db", Show.class.getConstructor());
+            if(option >= 1 && option <= 8 && show == null) show = new CRUD<Show>("shows.db", Show.class.getConstructor());
             switch (option) {
                 case 1:
                     try {
@@ -103,8 +107,8 @@ public class MainMenu implements AutoCloseable, SystemSpecification, MenuSpecifi
                         System.out.println("Tempo de execução para a leitura de " + 0 + " registros: " + 0 + "ms.");
                     } else {
                         int range = show.count();
-                        if(show.count() >= 2000) 
-                            range = 2000;
+                        if(show.count() >= 1000) 
+                            range = 1000;
                     
                         watch.reset();
                         watch.start();
@@ -122,10 +126,39 @@ public class MainMenu implements AutoCloseable, SystemSpecification, MenuSpecifi
                     StructureValidation.cleanJsonIndexesDirectory();
                     StructureValidation.cleanDatabaseFiles();
                     StructureValidation.cleanJsonDatabaseFiles();
+                    StructureValidation.cleanBackupDirectory();
+                    StructureValidation.cleanJsonPatternMatchingDirectory();
                     
                     BufferedWriter bw = new BufferedWriter(new FileWriter(configFilePath));
                     bw.write("indexes=");
                     bw.close();
+                    break;
+
+                case 7:
+                    new BackupMenu(br).build(show);
+                    break;
+
+                case 8:
+                    new MatchingMenu(br).build(show);
+                    break;
+
+                case 9:
+                    Show s = new Show("Movie", "3%", "Rafael", new Date(), (short) 2021, "1h 30m", "Comedy", "Teste de criptografia");
+                    
+                    System.out.println("Chave pública: " + s.getPublicExponent());
+                    System.out.println("Modulo: " + s.getModulus());
+                    System.out.println("Chave privada: " + s.getPrivateExponent());
+                    System.out.println();
+
+                    Show encrypted = s.encrypt();
+                    System.out.println("Registro criptografado: ");
+                    System.out.println(encrypted);
+                    System.out.println();
+
+                    System.out.println("Registro descriptografado: ");
+                    System.out.println(encrypted.decript());
+                    System.out.println();
+
                     break;
 
                 case 0:

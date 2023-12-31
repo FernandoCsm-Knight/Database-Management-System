@@ -21,6 +21,10 @@ import java.util.ArrayList;
 
 import components.interfaces.Register;
 import crud.base.BinaryArchive;
+import crud.core.compress.HuffmanCompressor;
+import crud.core.compress.HuffmanDecompressor;
+import crud.core.compress.LZWCompressor;
+import crud.core.compress.LZWDecompressor;
 import crud.core.types.Response;
 import err.EmptyFileException;
 import err.JsonValidationException;
@@ -175,7 +179,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
         do {
             pos = this.file.getFilePointer();
             lapide = this.file.readBoolean();
-            obj = this._readObj();
+            obj = this._readObj().decript();
         } while((!lapide || obj.compare(key, value) != 0) && !this._isEOF());
 
         if(obj == null || obj.compare(key, value) != 0 || !lapide) 
@@ -219,7 +223,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
     /**
      * Read the next object from the database archive.
      *
-     * @return A Response object containing the read object or an error message if the end of the file is reached.
+     * @return A Response object containjing the read object or an error message if the end of the file is reached.
      * @throws IOException If there is an issue with file operations.
      */
     public Response<T> readObj() throws IOException {
@@ -246,7 +250,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
 
         T obj = this._readObj(len);
         
-        Response<T> response = new Response<T>(true, "The object was readed successfully.", -1L, this.position, -1L, obj);
+        Response<T> response = new Response<T>(true, "The object was readed successfully.", -1L, this.position, -1L, obj.decript());
         this.position = this.file.getFilePointer();
         this.file.close();
         return response;
@@ -273,7 +277,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
 
         T obj = this._readObj();
         this.file.close();
-        return obj;
+        return obj.decript();
     }
 
     /**
@@ -305,7 +309,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
             response.success = true;
             response.message = "The object was readed successfully.";
             response.currentAddress = pos;
-            response.body = obj;
+            response.body = obj.decript();
         }
 
         this.file.close();
@@ -335,7 +339,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
             obj = this._readObj();
 
             if(lapide && obj.compare(key, o) == 0)
-                list.add(obj);
+                list.add(obj.decript());
         } while(this.file.getFilePointer() < this.file.length());
 
         this.file.close();
@@ -351,6 +355,7 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
      * @throws IOException If there is an issue with file operations.
      */
     public Response<T> update(int id, T obj) throws IOException {
+        T encypted = obj.encrypt();
         long pos = this.search("id", id);
         this.file = new RandomAccessFile(new File(this.filePath), "rw");
         Response<T> response = new Response<T>();
@@ -366,8 +371,8 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
         this.file.skipBytes(1);
         int len = this.file.readInt();
 
-        obj.setId(id);
-        byte[] b = obj.toByteArray();
+        encypted.setId(id);
+        byte[] b = encypted.toByteArray();
  
         if(b.length <= len) {
             response.currentAddress = pos;
@@ -477,29 +482,30 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
      * @throws IOException If there is an issue with file operations.
      */
     public Response<T> create(T obj) throws IOException {
+        T encypted = obj.encrypt();
         this.file = new RandomAccessFile(new File(this.filePath), "rw");
         this.__initiateDB();
 
         this.file.seek(0);
         this.ID = this.file.readInt();
         
-        if(obj.getId() == -1) {
+        if(encypted.getId() == -1) {
             this.ID++;
-            obj.setId(this.ID);
-        } else if(obj.getId() <= this.ID) 
+            encypted.setId(this.ID);
+        } else if(encypted.getId() <= this.ID) 
             throw new IndexOutOfBoundsException("O ID ja existe no arquivo, coloque um ID acima de " + this.ID + ".");
 
         long address = this.file.length();
         file.seek(address);
         this.file.writeBoolean(true);
 
-        this._writeObj(obj);
+        this._writeObj(encypted);
         
         this.file.seek(0);
-        this.file.writeInt(obj.getId());
+        this.file.writeInt(encypted.getId());
 
         this.file.close();
-        return new Response<T>(true, "The object was created in the address " + address + ".", -1L, address, -1L, obj);
+        return new Response<T>(true, "The object was created in the address " + address + ".", -1L, address, -1L, encypted);
     }
 
     /**
@@ -511,29 +517,76 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
      * @throws IOException If there is an issue with file operations.
      */
     public Response<T> create(T obj, boolean restoreId) throws IOException {
+        T encypted = obj.encrypt();
         this.file = new RandomAccessFile(new File(this.filePath), "rw");
         this.__initiateDB();
 
         this.file.seek(0);
         this.ID = this.file.readInt();
         
-        if(obj.getId() == -1 || restoreId) {
+        if(encypted.getId() == -1 || restoreId) {
             this.ID++;
-            obj.setId(this.ID);
-        } else if(obj.getId() <= this.ID) 
+            encypted.setId(this.ID);
+        } else if(encypted.getId() <= this.ID) 
             throw new IndexOutOfBoundsException("O ID ja existe no arquivo, coloque um ID acima de " + this.ID + ".");
 
         long address = this.file.length();
         file.seek(address);
         this.file.writeBoolean(true);
 
-        this._writeObj(obj);
+        this._writeObj(encypted);
         
         this.file.seek(0);
-        this.file.writeInt(obj.getId());
+        this.file.writeInt(encypted.getId());
 
         this.file.close();
-        return new Response<T>(true, "The object was created in the address " + address + ".", -1L, address, -1L, obj);
+        return new Response<T>(true, "The object was created in the address " + address + ".", -1L, address, -1L, encypted);
+    }
+
+    /**
+     * Compresses the file using the Huffman compression algorithm.
+     * 
+     * @param outputFilePath The path where the compressed output will be written
+     * @throws IOException If an I/O error occurs
+     */
+    public void compressHuffman(String outputFilePath) throws IOException {
+        HuffmanCompressor compressor = new HuffmanCompressor();
+        compressor.compressFile(this.filePath, outputFilePath);
+    }
+
+    /**
+     * Decompresses the file using the Huffman decompression algorithm.
+     * 
+     * @param inputFilePath The path of the input file to be decompressed
+     * @throws IOException If an I/O error occurs
+     */
+    public void decompressHuffman(String inputFilePath) throws IOException {
+        HuffmanDecompressor decompressor = new HuffmanDecompressor();
+        this.clear();
+        decompressor.decompressFile(inputFilePath, this.filePath);
+    }
+
+    /**
+     * Compresses the file using the LZW compression algorithm.
+     * 
+     * @param outputFilePath The path where the compressed output will be written
+     * @throws IOException If an I/O error occurs
+     */
+    public void compressLZW(String outputFilePath) throws IOException {
+        LZWCompressor compressor = new LZWCompressor();
+        compressor.compressFile(this.filePath, outputFilePath);
+    }
+
+    /**
+     * Decompresses the file using the LZW decompression algorithm.
+     * 
+     * @param inputFilePath The path of the input file to be decompressed
+     * @throws IOException If an I/O error occurs
+     */
+    public void decompressLZW(String inputFilePath) throws IOException {
+        LZWDecompressor decompressor = new LZWDecompressor();
+        this.clear();
+        decompressor.decompressFile(inputFilePath, this.filePath);
     }
 
     /**
@@ -658,24 +711,25 @@ public class DataBase<T extends Register<T>> extends BinaryArchive<T> {
      * @throws IOException If there is an issue with file operations.
      */
     private void __unsafeWrite(T obj) throws IOException {
+        T encypted = obj.encrypt();
         this.file = new RandomAccessFile(new File(this.filePath), "rw");
         this.__initiateDB();
 
         this.file.seek(0);
         this.ID = this.file.readInt();
         
-        if(obj.getId() == -1) {
+        if(encypted.getId() == -1) {
             this.ID++;
-            obj.setId(this.ID);
+            encypted.setId(this.ID);
         }
 
         file.seek(this.file.length());
         this.file.writeBoolean(true);
 
-        this._writeObj(obj);
+        this._writeObj(encypted);
         
         this.file.seek(0);
-        this.file.writeInt(obj.getId());
+        this.file.writeInt(encypted.getId());
 
         this.file.close();
     }

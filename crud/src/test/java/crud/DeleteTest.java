@@ -15,7 +15,7 @@ public class DeleteTest implements ShowInstance {
       crud.clear();
       crud.create(show);
       crud.delete(1);
-      assertFalse(crud.contains("id", 1));
+      assertFalse(crud.contains("id", 1).success);
    }
 
    @Test

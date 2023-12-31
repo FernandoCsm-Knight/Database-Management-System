@@ -1,15 +1,22 @@
 package crud;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import components.interfaces.Register;
 import crud.base.StructureValidation;
 import crud.core.DataBase;
 import crud.core.Trash;
+import crud.core.pattern_matching.BoyerMoore;
+import crud.core.pattern_matching.KMP;
+import crud.core.pattern_matching.Matcher;
+import crud.core.pattern_matching.RabinKarp;
 import crud.core.types.IndexType;
+import crud.core.types.PatternMatchingType;
 import crud.core.types.Response;
 import crud.core.types.SortType;
 import crud.indexes.hash.ExtensibleHash;
@@ -21,8 +28,11 @@ import crud.sorts.SortedFile;
 import crud.sorts.SortedFileFirst;
 import crud.sorts.SortedFileHeap;
 import crud.sorts.SortedFileSecond;
+import err.DecompressException;
+import layout.components.MenuCompressionResponse;
 import logic.SystemSpecification;
 import utils.csv.CSVManager;
+import utils.helpers.WatchTime;
 
 /**
  * @author Fernando Campos Silva Dal Maria & Rafael Fleury Barcellos Ceolin de Oliveira
@@ -94,6 +104,23 @@ public class CRUD<T extends Register<T>> implements SystemSpecification {
     }
 
     // Public Methods
+
+    /**
+     * Retrieves the name of the CRUD system's file path.
+     * @return The name of the CRUD system's file path.
+     */
+    public String getFilePath() {
+        return this.filePath;
+    }
+
+    /**
+     * Retrieves the length of the CRUD system's file.
+     * @return The length of the CRUD system's file.
+     * @throws IOException if an I/O error occurs.
+     */
+    public long length() throws IOException {
+        return this.archive.length();
+    }
 
     /**
      * Populates the CRUD system with records from a CSV file.
@@ -170,7 +197,7 @@ public class CRUD<T extends Register<T>> implements SystemSpecification {
         String path = JSON_FILES_DIRECTORY + this.fileName + (++FILE_COUNT) + ".json";
         this.archive.toJsonFile(path);
 
-        path = JSON_FILES_DIRECTORY + this.fileName + FILE_COUNT + ".trash.json";
+        path = JSON_TRASH_FILES_DIRECTORY + this.fileName + FILE_COUNT + ".trash.json";
         this.trash.toJsonFile(path);
 
         this.indexesToJsonFile();
@@ -186,7 +213,7 @@ public class CRUD<T extends Register<T>> implements SystemSpecification {
         String path = JSON_FILES_DIRECTORY + this.fileName + fileIndex + ".json";
         this.archive.toJsonFile(path);
 
-        path = JSON_FILES_DIRECTORY + this.fileName + fileIndex + ".trash.json";
+        path = JSON_TRASH_FILES_DIRECTORY + this.fileName + fileIndex + ".trash.json";
         this.trash.toJsonFile(path);
 
         this.indexesToJsonFile();
@@ -402,6 +429,138 @@ public class CRUD<T extends Register<T>> implements SystemSpecification {
         }
 
         return this.archive.delete(id) && value;
+    }
+
+    /**
+     * Get the list of backup files names.
+     * 
+     * @return The list of backup files names.
+     * @throws IOException if an I/O error occurs.
+     */
+    public ArrayList<String> getBackupFilesNames() throws IOException {
+        File file = new File(BACKUP_FILES_DIRECTORY);
+        ArrayList<String> arr = new ArrayList<>();
+        boolean tmp = false;
+        if(file.isDirectory()) {
+            for(File fi : file.listFiles()) {
+                if(fi.isDirectory()) {
+                    for(File f : fi.listFiles()) {
+                        if(f.getName().contains(this.fileName)) {
+                            arr.add(f.getName());
+                            tmp = true;
+                        }
+                    }
+                    
+                    if(tmp) break;
+                }
+            }
+        }
+
+        return arr;
+    }
+
+    /**
+     * Compress the CRUD system's data.
+     * 
+     * @return A response containing information about the compression.
+     * @throws Exception if an error occurs during compression.
+     */
+    public MenuCompressionResponse compress() throws Exception {
+        String fileName = new Date().toString().replaceAll("\s", "_") + "_" + this.fileName + ".db";
+        MenuCompressionResponse response = new MenuCompressionResponse(fileName);
+
+        WatchTime watch = new WatchTime();
+        watch.start();
+        this.archive.compressLZW(LZW_FILES_DIRECTORY + fileName);
+        response.timeLZW = watch.stop();
+        watch.reset();
+        watch.start();
+        this.archive.compressHuffman(HUFFMAN_FILES_DIRECTORY + fileName);
+        response.timeHuffman = watch.stop();
+        
+        return response;
+    }
+
+    /**
+     * Decompress the CRUD system's data.
+     * 
+     * @param filePath The file path to decompress.
+     * @return A response containing information about the decompression.
+     * @throws Exception if an error occurs during decompression.
+     */
+    public MenuCompressionResponse decompress(String filePath) throws Exception {
+        MenuCompressionResponse response = new MenuCompressionResponse(filePath);
+        WatchTime watch = new WatchTime();
+        watch.start();
+        this.archive.decompressHuffman(HUFFMAN_FILES_DIRECTORY + filePath);
+        response.timeHuffman = watch.stop();
+        watch.reset();
+        watch.start();
+        this.archive.decompressLZW(LZW_FILES_DIRECTORY + filePath);
+        response.timeLZW = watch.stop();
+
+        return response;
+    }
+
+    /**
+     * Delete a backup file of the CRUD system if exists.
+     * 
+     * @param filePath The file path to delete.
+     * @throws Exception if an error occurs during backup deletion.
+     */
+    public void deleteBackup(String filePath) throws Exception {
+        if(!filePath.contains("_")) 
+            throw new DecompressException("The backup file name is invalid.");
+
+        File file = new File(HUFFMAN_FILES_DIRECTORY + filePath);
+        if(file.exists()) file.delete();
+
+        file = new File(LZW_FILES_DIRECTORY + filePath);
+        if(file.exists()) file.delete();
+    }
+
+    /**
+     * A pattern matching search in the CRUD system that returns a list of records that match the given pattern.
+     * 
+     * @param type The pattern matching type to use.
+     * @param pattern The pattern to search for.
+     * @param csvPath The CSV file path to search in.
+     * @return A list of records that match the given pattern.
+     * @throws Exception if an error occurs during pattern matching.
+     */
+    public ArrayList<T> match(PatternMatchingType type, String pattern, String csvPath) throws Exception {
+        pattern = pattern.toLowerCase();
+        Matcher matcher;
+
+        if(type == PatternMatchingType.KMP) {
+            matcher = new KMP(pattern.toLowerCase());
+        } else if(type == PatternMatchingType.BoyerMoore) {
+            matcher = new BoyerMoore(pattern.toLowerCase());
+        } else if(type == PatternMatchingType.RabinKarp) {
+            matcher = new RabinKarp(pattern.toLowerCase());
+        } else throw new IllegalArgumentException("The argument \"" + type + "\" is not a valid pattern matching type.");
+
+        CSVManager manager = new CSVManager(CSV_FILES_DIRECTORY + csvPath);
+        
+        int index = -1;
+        String[] columns = manager.readNext();
+        ArrayList<T> list = new ArrayList<>();
+        while(columns != null) {
+            index = -1;
+            for(int i = 0; i < columns.length && index == -1; i++)
+                index = matcher.search(columns[i].toLowerCase());
+
+            if(index != -1) {
+                T inst = this.constructor.newInstance();
+                inst.from(columns);
+                list.add(inst);
+            }
+
+            columns = manager.readNext();
+        }
+
+        manager.close();
+        return list;
     }
 
     /**
