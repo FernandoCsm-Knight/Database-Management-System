@@ -1,7 +1,5 @@
-# Algoritmos-e-Estrutura-de-Dados-III
+# Database Management System Project
 ### Fernando Campos Silva Dal Maria & [Rafael Fleury Barcellos Ceolin de Oliveira](https://github.com/RafaelFleury/RafaelFleury)
-
-## Database Management System Project
 
 This project is a comprehensive software solution for managing and organizing data. It is structured to efficiently handle various data operations and storage needs.
 
